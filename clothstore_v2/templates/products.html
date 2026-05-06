@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Products — ClothStore{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="products-layout">
+
+      <!-- Sidebar Filter -->
+      <aside class="filter-sidebar">
+        <h3>Filters</h3>
+        <form id="filter-form" method="get" action="{{ url_for('products') }}">
+          {% if search %}<input type="hidden" name="search" value="{{ search }}">{% endif %}
+
+          <div class="filter-group">
+            <label>Gender</label>
+            <div class="filter-chip-group">
+              <button type="submit" name="gender" value="" class="filter-chip {% if not selected_gender %}active{% endif %}">All</button>
+              <button type="submit" name="gender" value="men" class="filter-chip {% if selected_gender == 'men' %}active{% endif %}">Men</button>
+              <button type="submit" name="gender" value="kid" class="filter-chip {% if selected_gender == 'kid' %}active{% endif %}">Kids</button>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Category</label>
+            <div class="filter-chip-group">
+              <button type="submit" name="category" value="" class="filter-chip {% if not selected_category %}active{% endif %}">All</button>
+              <button type="submit" name="category" value="t-shirt" class="filter-chip {% if selected_category == 't-shirt' %}active{% endif %}">T-Shirt</button>
+              <button type="submit" name="category" value="shirt" class="filter-chip {% if selected_category == 'shirt' %}active{% endif %}">Shirt</button>
+              <button type="submit" name="category" value="pant" class="filter-chip {% if selected_category == 'pant' %}active{% endif %}">Pant</button>
+            </div>
+          </div>
+
+          {% if selected_gender %}<input type="hidden" name="gender" value="{{ selected_gender }}">{% endif %}
+          {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+        </form>
+
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+          <a href="{{ url_for('products') }}" class="btn btn-outline btn-sm btn-block">Clear Filters</a>
+        </div>
+      </aside>
+
+      <!-- Products Area -->
+      <div>
+        <div class="sort-bar">
+          <p>
+            Showing <strong>{{ products|length }}</strong> products
+            {% if selected_gender %} for <strong>{{ selected_gender }}</strong>{% endif %}
+            {% if selected_category %} in <strong>{{ selected_category }}</strong>{% endif %}
+          </p>
+          <select id="sort-select" name="sort" onchange="this.form.submit()">
+            <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest First</option>
+            <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+            <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+          </select>
+        </div>
+
+        {% if products %}
+        <div class="product-grid">
+          {% for p in products %}
+          <a href="{{ url_for('product_detail', pid=p.id) }}" class="product-card">
+            <div class="product-card-img">
+              <img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy">
+            </div>
+            <div class="product-card-badges">
+              {% if p.is_new %}<span class="badge badge-new">New</span>{% endif %}
+              {% if p.original_price %}<span class="badge badge-sale">Sale</span>{% endif %}
+            </div>
+            <div class="product-card-body">
+              <div class="product-name">{{ p.name }}</div>
+              <div class="product-meta">{{ p.gender }} &bull; {{ p.category }}</div>
+              <div class="product-price">
+                <span class="price-now">৳{{ "%.0f"|format(p.price) }}</span>
+                {% if p.original_price %}<span class="price-old">৳{{ "%.0f"|format(p.original_price) }}</span>{% endif %}
+              </div>
+              <span class="btn btn-primary btn-sm btn-block">View Details</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+          <h3>No products found</h3>
+          <p>Try different filters or browse all products.</p>
+          <a href="{{ url_for('products') }}" class="btn btn-primary">Browse All</a>
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Chat — {{ user.name }}{% endblock %}
+{% block page_title %}Chat with {{ user.name }}{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb"><a href="{{ url_for('admin_chat_list') }}">Live Chat</a> › {{ user.name }}</nav>
+{% endblock %}
+{% block content %}
+
+<div style="max-width:700px;">
+  <div class="chat-window-admin" id="chatWindow">
+    {% for msg in messages %}
+    <div class="amsg amsg-{{ msg.sender }}">
+      <div class="abubble">{{ msg.message }}</div>
+      <div class="atime">{{ msg.sender|capitalize }} · {{ msg.created_at.strftime('%H:%M') if msg.created_at else '' }}</div>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:40px;color:var(--muted);">No messages yet in this chat.</div>
+    {% endfor %}
+  </div>
+  <div style="display:flex;gap:10px;margin-top:0;background:#fff;border:1.5px solid var(--border);border-top:none;border-radius:0 0 12px 12px;padding:12px 16px;">
+    <input type="text" id="msgInput" placeholder="Type reply..." autocomplete="off"
+           style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:50px;font-size:.88rem;font-family:inherit;"
+           onkeypress="if(event.key==='Enter')sendMsg()">
+    <button onclick="sendMsg()" style="background:var(--accent);color:#fff;border:none;border-radius:50%;width:42px;height:42px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+
+<style>
+.chat-window-admin{background:#fff;border:1.5px solid var(--border);border-radius:12px 12px 0 0;padding:20px;min-height:400px;max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;}
+.amsg{display:flex;flex-direction:column;max-width:75%;}
+.amsg-admin{align-self:flex-end;align-items:flex-end;}
+.amsg-user{align-self:flex-start;align-items:flex-start;}
+.abubble{padding:10px 16px;border-radius:18px;font-size:.88rem;line-height:1.5;}
+.amsg-admin .abubble{background:var(--accent);color:#fff;border-bottom-right-radius:4px;}
+.amsg-user .abubble{background:#f1f5f9;color:var(--text);border-bottom-left-radius:4px;}
+.atime{font-size:.7rem;color:var(--muted);margin-top:3px;padding:0 4px;}
+</style>
+
+<script>
+let lastId = {% if messages %}{{ messages[-1].id if messages else 0 }}{% else %}0{% endif %};
+const uid = {{ user.id }};
+
+function scrollBottom(){
+  const w = document.getElementById('chatWindow');
+  w.scrollTop = w.scrollHeight;
+}
+scrollBottom();
+
+function appendMsg(msg){
+  const w = document.getElementById('chatWindow');
+  const div = document.createElement('div');
+  div.className = 'amsg amsg-' + msg.sender;
+  div.innerHTML = `<div class="abubble">${msg.message}</div><div class="atime">${msg.sender.charAt(0).toUpperCase()+msg.sender.slice(1)} · ${msg.time}</div>`;
+  w.appendChild(div);
+  scrollBottom();
+}
+
+function sendMsg(){
+  const input = document.getElementById('msgInput');
+  const msg = input.value.trim();
+  if(!msg) return;
+  input.value = '';
+  fetch(`/admin/chat/${uid}`, {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:'message='+encodeURIComponent(msg)
+  }).then(()=>{
+    appendMsg({sender:'admin', message:msg, time: new Date().toLocaleTimeString('en-BD',{hour:'2-digit',minute:'2-digit'})});
+  });
+}
+
+// Poll for new messages every 4s
+setInterval(()=>{
+  fetch(`/admin/chat/${uid}/poll?since=${lastId}`)
+  .then(r=>r.json()).then(data=>{
+    data.messages.forEach(m=>{
+      if(m.id > lastId){
+        lastId = m.id;
+        if(m.sender === 'user') appendMsg(m);
+      }
+    });
+  });
+}, 4000);
+</script>
+{% endblock %}s

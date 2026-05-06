@@ -1,0 +1,102 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Products{% endblock %}
+{% block page_title %}Products{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_add_product') }}" class="btn btn-primary btn-sm">+ Add Product</a>
+{% endblock %}
+
+{% block content %}
+<!-- Filter Bar -->
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-body" style="padding:14px 20px;">
+    <form method="get" class="filter-bar">
+      <input type="text" name="search" placeholder="Search name..." value="{{ search }}">
+      <select name="category">
+        <option value="">All Categories</option>
+        <option value="t-shirt" {% if category=='t-shirt' %}selected{% endif %}>T-Shirt</option>
+        <option value="shirt"   {% if category=='shirt'   %}selected{% endif %}>Shirt</option>
+        <option value="pant"    {% if category=='pant'    %}selected{% endif %}>Pant</option>
+      </select>
+      <select name="gender">
+        <option value="">All Genders</option>
+        <option value="men" {% if gender=='men' %}selected{% endif %}>Men</option>
+        <option value="kid" {% if gender=='kid' %}selected{% endif %}>Kid</option>
+      </select>
+      <select name="stock">
+        <option value="">All Stock</option>
+        <option value="out" {% if stock_f=='out' %}selected{% endif %}>Out of Stock</option>
+        <option value="low" {% if stock_f=='low' %}selected{% endif %}>Low Stock (≤5)</option>
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      <a href="{{ url_for('admin_products') }}" class="btn btn-outline btn-sm">Clear</a>
+      <span style="margin-left:auto;font-size:.8rem;color:var(--muted);">{{ products|length }} products</span>
+    </form>
+  </div>
+</div>
+
+<!-- Products Table -->
+<div class="card">
+  {% if products %}
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>ID</th><th>Image</th><th>Name</th><th>Category</th>
+        <th>Gender</th><th>Price</th><th>Stock</th><th>Flags</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in products %}
+      <tr>
+        <td style="color:var(--muted);">#{{ p.id }}</td>
+        <td>
+          <img src="{{ p.image }}" alt="{{ p.name }}"
+               onerror="this.src='https://via.placeholder.com/44x44?text=IMG'">
+        </td>
+        <td>
+          <strong style="font-size:.85rem;">{{ p.name }}</strong>
+          {% if p.original_price %}
+          <div style="font-size:.72rem;color:var(--muted);">Was ৳{{ "%.0f"|format(p.original_price) }}</div>
+          {% endif %}
+        </td>
+        <td><span class="badge badge-gray" style="text-transform:capitalize;">{{ p.category }}</span></td>
+        <td style="text-transform:capitalize;font-size:.83rem;">{{ p.gender }}</td>
+        <td><strong>৳{{ "%.0f"|format(p.price) }}</strong></td>
+        <td>
+          <!-- Quick stock edit inline -->
+          <form method="post" action="{{ url_for('admin_update_stock', pid=p.id) }}" style="display:flex;align-items:center;gap:6px;">
+            <input type="number" name="stock" value="{{ p.stock }}" min="0"
+                   style="width:60px;padding:4px 8px;border:1.5px solid {% if p.stock==0 %}#fecaca{% elif p.stock<=5 %}#fde68a{% else %}var(--border){% endif %};border-radius:5px;font-size:.82rem;">
+            <button type="submit" class="btn btn-outline btn-xs" title="Update stock">✓</button>
+          </form>
+          <div style="font-size:.7rem;margin-top:2px;
+            color:{% if p.stock==0 %}#e11d48{% elif p.stock<=5 %}#d97706{% else %}#16a34a{% endif %};">
+            {% if p.stock==0 %}Out of stock{% elif p.stock<=5 %}Low stock{% else %}In stock{% endif %}
+          </div>
+        </td>
+        <td>
+          {% if p.is_featured %}<span class="badge badge-purple" style="margin-bottom:3px;">Featured</span><br>{% endif %}
+          {% if p.is_new %}<span class="badge badge-blue">New</span>{% endif %}
+          {% if not p.is_featured and not p.is_new %}<span class="badge badge-gray">—</span>{% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            <a href="{{ url_for('admin_edit_product', pid=p.id) }}" class="btn btn-outline btn-xs">✏️ Edit</a>
+            <a href="{{ url_for('product_detail', pid=p.id) }}" class="btn btn-outline btn-xs" target="_blank">👁</a>
+            <form method="post" action="{{ url_for('admin_delete_product', pid=p.id) }}" style="display:inline;"
+                  onsubmit="return confirm('Delete {{ p.name }}? This cannot be undone.')">
+              <button type="submit" class="btn btn-danger btn-xs">🗑</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+    <p>No products found. <a href="{{ url_for('admin_add_product') }}" style="color:var(--accent);">Add one →</a></p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

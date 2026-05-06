@@ -1,0 +1,118 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Users{% endblock %}
+{% block page_title %}Users{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-header">
+    <h3>All Users ({{ users|length }})</h3>
+    <form class="filter-bar" method="get">
+      <input type="text" name="search" placeholder="Search name/email..." value="{{ search }}">
+      <button type="submit" class="btn btn-primary btn-sm">Search</button>
+      {% if search %}<a href="{{ url_for('admin_users') }}" class="btn btn-outline btn-sm">Clear</a>{% endif %}
+    </form>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Name</th><th>Email</th><th>Phone</th>
+          <th>Orders</th><th>Tag</th><th>Rating</th><th>Admin</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td style="color:var(--muted);">{{ u.id }}</td>
+          <td><strong>{{ u.name }}</strong></td>
+          <td style="color:var(--muted);font-size:.8rem;">{{ u.email }}</td>
+          <td style="color:var(--muted);font-size:.8rem;">{{ u.phone or '—' }}</td>
+          <td><span class="badge badge-blue">{{ u.order_count }}</span></td>
+          <td>
+            {% set tag_colors = {'VIP':'purple','Loyal':'green','New':'blue','Blocked':'red','Regular':'gray'} %}
+            <span class="badge badge-{{ tag_colors.get(u.tag, 'gray') }}">{{ u.tag or 'New' }}</span>
+          </td>
+          <td>
+            {% if u.rating %}
+              {% for i in range(1,6) %}
+                <span style="color:{% if i <= u.rating %}#f59e0b{% else %}#e2e8f0{% endif %};">★</span>
+              {% endfor %}
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if u.is_admin %}<span class="badge badge-purple">Admin</span>{% else %}<span class="badge badge-gray">User</span>{% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <!-- Tag & Rating Dropdown -->
+              <button onclick="toggleTagModal({{ u.id }}, '{{ u.tag or 'New' }}', {{ u.rating or 0 }})" class="btn btn-xs btn-outline">⭐ Tag</button>
+
+              {% if u.id != session.user_id %}
+              <form method="post" action="{{ url_for('admin_toggle_admin', uid=u.id) }}" style="display:inline;" onsubmit="return confirm('Toggle admin role?')">
+                <button type="submit" class="btn btn-xs {% if u.is_admin %}btn-warning{% else %}btn-success{% endif %}">
+                  {{ 'Remove Admin' if u.is_admin else 'Make Admin' }}
+                </button>
+              </form>
+              <form method="post" action="{{ url_for('admin_delete_user', uid=u.id) }}" style="display:inline;" onsubmit="return confirm('Delete this user?')">
+                <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="empty"><p>No users found.</p></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Tag/Rating Modal -->
+<div id="tagModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:24px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+    <h3 style="font-size:.95rem;font-weight:700;margin-bottom:16px;">⭐ Set Tag & Rating</h3>
+    <form method="post" id="tagForm">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>User Tag</label>
+        <select name="tag" id="tagSelect">
+          <option value="New">🆕 New</option>
+          <option value="Regular">👤 Regular</option>
+          <option value="Loyal">💎 Loyal</option>
+          <option value="VIP">👑 VIP</option>
+          <option value="Blocked">🚫 Blocked</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>Star Rating (1-5)</label>
+        <div style="display:flex;gap:8px;margin-top:4px;" id="starPicker">
+          {% for i in range(1,6) %}
+          <span data-star="{{ i }}" onclick="setStar({{ i }})" style="font-size:1.6rem;cursor:pointer;color:#e2e8f0;transition:color .1s;">★</span>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="rating" id="ratingInput" value="0">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn-primary" style="flex:1;">Save</button>
+        <button type="button" onclick="closeTagModal()" class="btn btn-outline">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function toggleTagModal(uid, tag, rating) {
+  document.getElementById('tagForm').action = `/admin/user/${uid}/set-tag`;
+  document.getElementById('tagSelect').value = tag;
+  setStar(rating);
+  document.getElementById('tagModal').style.display = 'flex';
+}
+function closeTagModal() { document.getElementById('tagModal').style.display = 'none'; }
+function setStar(n) {
+  document.getElementById('ratingInput').value = n;
+  document.querySelectorAll('#starPicker span').forEach((el, i) => {
+    el.style.color = i < n ? '#f59e0b' : '#e2e8f0';
+  });
+}
+</script>
+{% endblock %}

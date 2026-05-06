@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Register — ClothStore{% endblock %}
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1>Create Account</h1>
+      <p>Join ClothStore today</p>
+    </div>
+    <form method="post">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" name="name" placeholder="Your full name" required>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" name="email" placeholder="email@example.com" required>
+      </div>
+      <div class="form-group">
+        <label>Phone Number <span style="color:#94a3b8;font-weight:400;">(for login & delivery)</span></label>
+        <input type="tel" name="phone" placeholder="01xxxxxxxxx">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Choose a strong password" required minlength="6">
+      </div>
+      <button type="submit" class="btn btn-accent btn-full">Create Account</button>
+    </form>
+    <p class="auth-switch">Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+  </div>
+</div>
+{% endblock %}

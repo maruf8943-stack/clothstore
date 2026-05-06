@@ -1,0 +1,85 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div style="max-width:560px;display:flex;flex-direction:column;gap:20px;">
+
+  <!-- Change Name -->
+  <div class="card">
+    <div class="card-header"><h3>Change Display Name</h3></div>
+    <div class="card-body">
+      <form method="post">
+        <input type="hidden" name="action" value="change_name">
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>Your Name</label>
+          <input type="text" name="name" value="{{ session.username }}" required placeholder="Your name">
+        </div>
+        <button type="submit" class="btn btn-primary">Save Name</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Change Password -->
+  <div class="card">
+    <div class="card-header"><h3>Change Password</h3></div>
+    <div class="card-body">
+      <form method="post">
+        <input type="hidden" name="action" value="change_password">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Current Password</label>
+          <input type="password" name="old_password" required placeholder="Enter current password">
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>New Password</label>
+          <input type="password" name="new_password" required placeholder="Min 6 characters" minlength="6">
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>Confirm New Password</label>
+          <input type="password" id="confirm_pw" required placeholder="Repeat new password">
+        </div>
+        <button type="submit" class="btn btn-primary" id="savePwBtn">Update Password</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Account Info -->
+  <div class="card">
+    <div class="card-header"><h3>Account Info</h3></div>
+    <div class="card-body">
+      <div class="info-row"><span>Name</span><strong>{{ session.username }}</strong></div>
+      <div class="info-row"><span>Role</span><span class="badge badge-purple">Admin</span></div>
+      <div class="info-row"><span>User ID</span><span>#{{ session.user_id }}</span></div>
+    </div>
+  </div>
+
+  <!-- Links -->
+  <div class="card">
+    <div class="card-header"><h3>Quick Links</h3></div>
+    <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap;">
+      <a href="{{ url_for('index') }}" class="btn btn-outline" target="_blank">🏠 View Store</a>
+      <a href="{{ url_for('admin_products') }}" class="btn btn-outline">📦 Products</a>
+      <a href="{{ url_for('admin_orders') }}" class="btn btn-outline">📋 Orders</a>
+      <a href="{{ url_for('admin_users') }}" class="btn btn-outline">👥 Users</a>
+      <a href="{{ url_for('logout') }}" class="btn btn-danger">🚪 Logout</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Confirm passwords match
+const newPw = document.querySelector('[name=new_password]');
+const confPw = document.getElementById('confirm_pw');
+const btn    = document.getElementById('savePwBtn');
+function checkPw() {
+  const match = newPw.value === confPw.value;
+  confPw.style.borderColor = confPw.value ? (match ? '#16a34a' : '#e11d48') : '';
+  btn.disabled = !match;
+}
+newPw.addEventListener('input', checkPw);
+confPw.addEventListener('input', checkPw);
+</script>
+{% endblock %}

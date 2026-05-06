@@ -1,0 +1,92 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Banners & Payment{% endblock %}
+{% block page_title %}Banners & Payment Settings{% endblock %}
+{% block content %}
+
+<form method="post">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+
+    <!-- Announcement & Hero -->
+    <div class="card">
+      <div class="card-header"><h3>🏷️ Announcement & Hero</h3></div>
+      <div class="card-body form-grid" style="gap:14px;">
+        <div class="form-group">
+          <label>Announcement Bar Text</label>
+          <input type="text" name="announcement_bar" value="{{ settings.get('announcement_bar','') }}">
+          <span class="form-hint">Shown at the top of every page</span>
+        </div>
+        <div class="form-group">
+          <label>Hero Title</label>
+          <input type="text" name="hero_title" value="{{ settings.get('hero_title','') }}">
+        </div>
+        <div class="form-group">
+          <label>Hero Subtitle</label>
+          <input type="text" name="hero_subtitle" value="{{ settings.get('hero_subtitle','') }}">
+        </div>
+        <div class="form-group">
+          <label>Hero Badge (e.g. 🔥 New Season)</label>
+          <input type="text" name="hero_badge" value="{{ settings.get('hero_badge','') }}">
+        </div>
+        <div class="form-group">
+          <label>Feature Badge 1</label>
+          <input type="text" name="feature_badge_1" value="{{ settings.get('feature_badge_1','') }}">
+        </div>
+        <div class="form-group">
+          <label>Feature Badge 2</label>
+          <input type="text" name="feature_badge_2" value="{{ settings.get('feature_badge_2','') }}">
+        </div>
+        <div class="form-group">
+          <label>Feature Badge 3</label>
+          <input type="text" name="feature_badge_3" value="{{ settings.get('feature_badge_3','') }}">
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment -->
+    <div class="card">
+      <div class="card-header"><h3>💳 Mobile Payment Numbers</h3></div>
+      <div class="card-body form-grid" style="gap:14px;">
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:6px;"><span style="background:#e2136e;color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:.75rem;">b</span> bKash Number</label>
+          <input type="text" name="bkash_number" value="{{ settings.get('bkash_number','') }}" placeholder="01xxxxxxxxx">
+        </div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:6px;"><span style="background:#f6521f;color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:.75rem;">N</span> Nagad Number</label>
+          <input type="text" name="nagad_number" value="{{ settings.get('nagad_number','') }}" placeholder="01xxxxxxxxx">
+        </div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:6px;"><span style="background:#8b1fa9;color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:.75rem;">R</span> Rocket Number</label>
+          <input type="text" name="rocket_number" value="{{ settings.get('rocket_number','') }}" placeholder="01xxxxxxxxx">
+        </div>
+        <div class="form-group">
+          <label>Payment Instructions</label>
+          <textarea name="payment_instructions" rows="4">{{ settings.get('payment_instructions','') }}</textarea>
+          <span class="form-hint">Shown to customers at checkout when they select a mobile payment method.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview -->
+  <div class="card" style="margin-top:0;">
+    <div class="card-header"><h3>👁️ Preview</h3></div>
+    <div class="card-body">
+      <div style="background:#e11d48;color:#fff;text-align:center;padding:8px;font-size:.83rem;border-radius:8px;margin-bottom:12px;" id="previewAnnounce">
+        {{ settings.get('announcement_bar','') }}
+      </div>
+      <div style="background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;border-radius:12px;padding:28px;text-align:center;">
+        <span style="background:#e11d48;color:#fff;padding:4px 14px;border-radius:20px;font-size:.78rem;font-weight:700;" id="previewBadge">{{ settings.get('hero_badge','') }}</span>
+        <h2 style="margin:12px 0 8px;font-size:1.5rem;" id="previewTitle">{{ settings.get('hero_title','') }}</h2>
+        <p style="color:rgba(255,255,255,.7);font-size:.88rem;" id="previewSubtitle">{{ settings.get('hero_subtitle','') }}</p>
+        <div style="display:flex;justify-content:center;gap:10px;margin-top:16px;flex-wrap:wrap;">
+          <span style="background:rgba(255,255,255,.12);padding:5px 14px;border-radius:20px;font-size:.78rem;" id="pb1">{{ settings.get('feature_badge_1','') }}</span>
+          <span style="background:rgba(255,255,255,.12);padding:5px 14px;border-radius:20px;font-size:.78rem;" id="pb2">{{ settings.get('feature_badge_2','') }}</span>
+          <span style="background:rgba(255,255,255,.12);padding:5px 14px;border-radius:20px;font-size:.78rem;" id="pb3">{{ settings.get('feature_badge_3','') }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary" style="padding:12px 32px;font-size:.95rem;">💾 Save All Settings</button>
+</form>
+{% endblock %}

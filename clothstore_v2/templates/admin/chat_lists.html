@@ -1,0 +1,40 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Live Chat{% endblock %}
+{% block page_title %}Live Chat{% endblock %}
+{% block content %}
+
+{% if chats %}
+<div class="card">
+  <div class="card-header"><h3>Customer Conversations ({{ chats|length }})</h3></div>
+  <div style="overflow-x:auto;">
+    <table class="admin-table">
+      <thead>
+        <tr><th>Customer</th><th>Email</th><th>Last Message</th><th>Unread</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for c in chats %}
+        <tr>
+          <td><strong>{{ c.name }}</strong></td>
+          <td style="color:var(--muted);font-size:.8rem;">{{ c.email }}</td>
+          <td style="color:var(--muted);font-size:.8rem;">{{ c.last_msg.strftime('%d %b %Y, %H:%M') if c.last_msg else '—' }}</td>
+          <td>
+            {% if c.unread > 0 %}
+            <span class="badge badge-red">{{ c.unread }} new</span>
+            {% else %}
+            <span class="badge badge-gray">Read</span>
+            {% endif %}
+          </td>
+          <td><a href="{{ url_for('admin_chat_user', uid=c.id) }}" class="btn btn-sm btn-primary">Open Chat</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="empty">
+  <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+  <p>No customer messages yet.</p>
+</div>
+{% endif %}
+{% endblock %}

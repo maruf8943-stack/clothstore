@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% block title %}ClothStore — Men & Kids Fashion{% endblock %}
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-content">
+      <span class="hero-tag">New Collection 2024</span>
+      <h1>Dress Bold.<br><em>Look Sharp.</em></h1>
+      <p>Premium men's and kids' fashion — t-shirts, shirts, and pants crafted for everyday confidence. Quality you can feel, prices you'll love.</p>
+      <div class="hero-actions">
+        <a href="{{ url_for('products') }}" class="btn btn-accent">Shop Now &rarr;</a>
+        <a href="{{ url_for('products', gender='men') }}" class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,.4);">Men's Picks</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><strong>500+</strong><span>Products</span></div>
+        <div class="hero-stat"><strong>50K+</strong><span>Happy Customers</span></div>
+        <div class="hero-stat"><strong>100%</strong><span>Quality</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROMO STRIP -->
+<div class="promo-strip">
+  <div class="container">
+    <div class="promo-strip-inner">
+      <div class="promo-item">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        Free Delivery above ৳2,000
+      </div>
+      <div class="promo-item">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Easy 7-Day Returns
+      </div>
+      <div class="promo-item">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Authentic Products
+      </div>
+      <div class="promo-item">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        24/7 Support
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORY CARDS -->
+<section class="section" style="background:var(--light-bg)">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Shop by Category</div>
+        <p class="section-sub">Find what fits your style</p>
+      </div>
+    </div>
+    <div class="cat-grid">
+      <a href="{{ url_for('products', category='t-shirt', gender='men') }}" class="cat-card">
+        <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600" alt="Men's T-Shirts">
+        <div class="cat-card-overlay">
+          <div class="cat-card-label">Men's T-Shirts</div>
+          <div class="cat-card-sub">Casual &amp; Graphic</div>
+        </div>
+      </a>
+      <a href="{{ url_for('products', category='shirt', gender='men') }}" class="cat-card">
+        <img src="https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600" alt="Men's Shirts">
+        <div class="cat-card-overlay">
+          <div class="cat-card-label">Men's Shirts</div>
+          <div class="cat-card-sub">Formal &amp; Casual</div>
+        </div>
+      </a>
+      <a href="{{ url_for('products', category='pant', gender='men') }}" class="cat-card">
+        <img src="https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=600" alt="Men's Pants">
+        <div class="cat-card-overlay">
+          <div class="cat-card-label">Men's Pants</div>
+          <div class="cat-card-sub">Chinos, Cargo &amp; More</div>
+        </div>
+      </a>
+      <a href="{{ url_for('products', category='t-shirt', gender='kid') }}" class="cat-card">
+        <img src="https://images.unsplash.com/photo-1519278409-1f56fdda7fe5?w=600" alt="Kids T-Shirts">
+        <div class="cat-card-overlay">
+          <div class="cat-card-label">Kids' T-Shirts</div>
+          <div class="cat-card-sub">Fun &amp; Colourful</div>
+        </div>
+      </a>
+      <a href="{{ url_for('products', category='shirt', gender='kid') }}" class="cat-card">
+        <img src="https://images.unsplash.com/photo-1595590424283-b8f17842773f?w=600" alt="Kids Shirts">
+        <div class="cat-card-overlay">
+          <div class="cat-card-label">Kids' Shirts</div>
+          <div class="cat-card-sub">Smart &amp; Festive</div>
+        </div>
+      </a>
+      <a href="{{ url_for('products', category='pant', gender='kid') }}" class="cat-card">
+        <img src="https://images.unsplash.com/photo-1518717758536-85ae29035b6d?w=600" alt="Kids Pants">
+        <div class="cat-card-overlay">
+          <div class="cat-card-label">Kids' Pants</div>
+          <div class="cat-card-sub">Joggers &amp; Chinos</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED PRODUCTS -->
+{% if featured %}
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Featured Products</div>
+        <p class="section-sub">Handpicked just for you</p>
+      </div>
+      <a href="{{ url_for('products') }}" class="view-all">View All &rarr;</a>
+    </div>
+    <div class="product-grid">
+      {% for p in featured %}
+      <a href="{{ url_for('product_detail', pid=p.id) }}" class="product-card">
+        <div class="product-card-img">
+          <img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy">
+        </div>
+        <div class="product-card-badges">
+          {% if p.is_new %}<span class="badge badge-new">New</span>{% endif %}
+          {% if p.original_price %}<span class="badge badge-sale">Sale</span>{% endif %}
+        </div>
+        <div class="product-card-body">
+          <div class="product-name">{{ p.name }}</div>
+          <div class="product-meta">{{ p.gender }} &bull; {{ p.category }}</div>
+          <div class="product-price">
+            <span class="price-now">৳{{ "%.0f"|format(p.price) }}</span>
+            {% if p.original_price %}<span class="price-old">৳{{ "%.0f"|format(p.original_price) }}</span>{% endif %}
+          </div>
+          <div class="product-card-actions">
+            <span class="btn btn-primary btn-sm" style="flex:1;justify-content:center;">View Details</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- PROMO BANNERS -->
+<section style="padding: 0 0 60px;">
+  <div class="container">
+    <div class="promo-banners">
+      <div class="promo-banner">
+        <img src="https://images.unsplash.com/photo-1603252109303-2751441dd157?w=700" alt="Men's Sale">
+        <div class="promo-banner-content">
+          <h3>Men's Special</h3>
+          <p>Up to 30% off on selected shirts &amp; pants</p>
+          <a href="{{ url_for('products', gender='men') }}" class="btn btn-accent btn-sm">Shop Men &rarr;</a>
+        </div>
+      </div>
+      <div class="promo-banner">
+        <img src="https://images.unsplash.com/photo-1519185007994-4490c53b4b41?w=700" alt="Kids Sale">
+        <div class="promo-banner-content">
+          <h3>Kids' Corner</h3>
+          <p>New festive styles for little ones</p>
+          <a href="{{ url_for('products', gender='kid') }}" class="btn btn-accent btn-sm">Shop Kids &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NEW ARRIVALS -->
+{% if new_arrivals %}
+<section class="section" style="background:var(--light-bg)">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-title">New Arrivals</div>
+        <p class="section-sub">Just landed this week</p>
+      </div>
+      <a href="{{ url_for('products', is_new=1) }}" class="view-all">View All &rarr;</a>
+    </div>
+    <div class="product-grid">
+      {% for p in new_arrivals %}
+      <a href="{{ url_for('product_detail', pid=p.id) }}" class="product-card">
+        <div class="product-card-img">
+          <img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy">
+        </div>
+        <div class="product-card-badges">
+          <span class="badge badge-new">New</span>
+          {% if p.original_price %}<span class="badge badge-sale">Sale</span>{% endif %}
+        </div>
+        <div class="product-card-body">
+          <div class="product-name">{{ p.name }}</div>
+          <div class="product-meta">{{ p.gender }} &bull; {{ p.category }}</div>
+          <div class="product-price">
+            <span class="price-now">৳{{ "%.0f"|format(p.price) }}</span>
+            {% if p.original_price %}<span class="price-old">৳{{ "%.0f"|format(p.original_price) }}</span>{% endif %}
+          </div>
+          <div class="product-card-actions">
+            <span class="btn btn-primary btn-sm" style="flex:1;justify-content:center;">View Details</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}
