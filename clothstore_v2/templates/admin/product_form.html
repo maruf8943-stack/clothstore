@@ -1,0 +1,173 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}{{ action }} Product{% endblock %}
+{% block page_title %}{{ action }} Product{% endblock %}
+{% block breadcrumb %}
+  <span class="breadcrumb">/ <a href="{{ url_for('admin_products') }}">Products</a> / {{ action }}</span>
+{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_products') }}" class="btn btn-outline btn-sm">← Back to Products</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:800px;">
+  <form method="post" enctype="multipart/form-data">
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><h3>Basic Information</h3></div>
+      <div class="card-body">
+        <div class="form-grid form-grid-2">
+
+          <div class="form-group full">
+            <label>Product Name *</label>
+            <input type="text" name="name" required placeholder="e.g. Classic White Polo Tee"
+                   value="{{ product.name if product else '' }}">
+          </div>
+
+          <div class="form-group">
+            <label>Category *</label>
+            <select name="category" required>
+              {% for cat in ['t-shirt','shirt','pant'] %}
+              <option value="{{ cat }}" {% if product and product.category==cat %}selected{% endif %}>
+                {{ cat|capitalize }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Gender *</label>
+            <select name="gender" required>
+              <option value="men" {% if product and product.gender=='men' %}selected{% endif %}>Men</option>
+              <option value="kid" {% if product and product.gender=='kid' %}selected{% endif %}>Kid</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Sale Price (৳) *</label>
+            <input type="number" name="price" step="0.01" required placeholder="999"
+                   value="{{ product.price if product else '' }}">
+          </div>
+
+          <div class="form-group">
+            <label>Original Price (৳) <span style="color:var(--muted);font-weight:400;">— leave blank if no sale</span></label>
+            <input type="number" name="original_price" step="0.01" placeholder="1299"
+                   value="{{ product.original_price if product and product.original_price else '' }}">
+          </div>
+
+          <div class="form-group">
+            <label>Sizes <span style="color:var(--muted);font-weight:400;">comma-separated</span></label>
+            <input type="text" name="sizes" placeholder="S,M,L,XL or 28,30,32,34"
+                   value="{{ product.sizes if product else 'S,M,L,XL' }}">
+          </div>
+
+          <div class="form-group">
+            <label>Stock Quantity *</label>
+            <input type="number" name="stock" min="0" required placeholder="0"
+                   value="{{ product.stock if product else '0' }}">
+          </div>
+
+          <div class="form-group full">
+            <label>Description *</label>
+            <textarea name="description" rows="4" required placeholder="Describe the product...">{{ product.description if product else '' }}</textarea>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Section -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><h3>Product Image</h3></div>
+      <div class="card-body">
+        {% if product and product.image %}
+        <div style="margin-bottom:14px;">
+          <div style="font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:6px;">Current Image</div>
+          <img src="{{ product.image }}" alt="Current" class="img-preview"
+               onerror="this.src='https://via.placeholder.com/100?text=IMG'">
+        </div>
+        {% endif %}
+
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label>📁 Upload Image from Computer</label>
+            <div class="upload-area" onclick="document.getElementById('imgFile').click()">
+              <svg width="24" height="24" fill="none" stroke="var(--muted)" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:6px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <div style="font-size:.8rem;color:var(--muted);">Click to choose JPG/PNG/WebP (max 5MB)</div>
+              <div id="fileNameLabel" style="font-size:.78rem;color:var(--accent);margin-top:4px;"></div>
+            </div>
+            <input type="file" id="imgFile" name="image_file" accept="image/*" style="display:none"
+                   onchange="previewImage(this)">
+            <img id="imgPreview" src="" alt="" class="img-preview" style="display:none;margin-top:8px;">
+          </div>
+
+          <div class="form-group">
+            <label>🔗 OR Paste Image URL</label>
+            <input type="url" name="image_url" placeholder="https://example.com/image.jpg"
+                   value="{{ product.image if product and product.image and not product.image.startswith('/static') else '' }}"
+                   id="imgUrl" onchange="previewUrl(this.value)">
+            <div class="form-hint">If you upload a file, it takes priority over the URL.</div>
+            <img id="urlPreview" src="" alt="" class="img-preview" style="display:none;margin-top:8px;">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flags -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><h3>Display Flags</h3></div>
+      <div class="card-body" style="display:flex;gap:24px;">
+        <label class="form-check">
+          <input type="checkbox" name="is_new" {% if product and product.is_new %}checked{% endif %}>
+          ✨ Mark as New Arrival
+        </label>
+        <label class="form-check">
+          <input type="checkbox" name="is_featured" {% if product and product.is_featured %}checked{% endif %}>
+          ⭐ Mark as Featured (shows on homepage)
+        </label>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button type="submit" class="btn btn-primary" style="padding:11px 28px;">
+        {% if action=='Edit' %}💾 Save Changes{% else %}➕ Add Product{% endif %}
+      </button>
+      <a href="{{ url_for('admin_products') }}" class="btn btn-outline">Cancel</a>
+      {% if product %}
+      <a href="{{ url_for('product_detail', pid=product.id) }}" class="btn btn-outline" target="_blank">👁 Preview on Store</a>
+      {% endif %}
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function previewImage(input) {
+  const preview = document.getElementById('imgPreview');
+  const label   = document.getElementById('fileNameLabel');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+    label.textContent = input.files[0].name;
+  }
+}
+function previewUrl(url) {
+  const preview = document.getElementById('urlPreview');
+  if (url) {
+    preview.src = url;
+    preview.style.display = 'block';
+    preview.onerror = () => preview.style.display = 'none';
+  }
+}
+// Auto-preview existing URL on load
+window.onload = () => {
+  const url = document.getElementById('imgUrl').value;
+  if (url) previewUrl(url);
+};
+</script>
+{% endblock %}

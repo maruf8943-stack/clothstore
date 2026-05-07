@@ -1,0 +1,114 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Vouchers{% endblock %}
+{% block page_title %}Vouchers & Coupons{% endblock %}
+{% block topbar_actions %}
+<button onclick="document.getElementById('addVoucherModal').style.display='flex'" class="btn btn-primary btn-sm">+ New Voucher</button>
+{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-header"><h3>All Vouchers ({{ vouchers|length }})</h3></div>
+  <div style="overflow-x:auto;">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Code</th><th>Discount</th><th>Min Order</th><th>Uses</th>
+          <th>Assigned To</th><th>Expires</th><th>Status</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in vouchers %}
+        <tr>
+          <td><strong style="font-family:monospace;font-size:.88rem;letter-spacing:.05em;">{{ v.code }}</strong></td>
+          <td>
+            {% if v.discount_pct > 0 %}
+              <span class="badge badge-green">{{ v.discount_pct|int }}% off</span>
+            {% else %}
+              <span class="badge badge-blue">৳{{ v.discount_amt|int }} off</span>
+            {% endif %}
+          </td>
+          <td>{% if v.min_order > 0 %}৳{{ v.min_order|int }}{% else %}<span style="color:var(--muted);">None</span>{% endif %}</td>
+          <td>
+            {{ v.used_count }}{% if v.max_uses %} / {{ v.max_uses }}{% else %} / ∞{% endif %}
+          </td>
+          <td>
+            {% if v.user_name %}<span class="badge badge-purple">{{ v.user_name }}</span>
+            {% else %}<span class="badge badge-gray">Public</span>{% endif %}
+          </td>
+          <td style="font-size:.8rem;color:var(--muted);">{{ v.expires_at or 'No expiry' }}</td>
+          <td>
+            {% if v.is_active %}<span class="badge badge-green">Active</span>
+            {% else %}<span class="badge badge-red">Inactive</span>{% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <form method="post" action="{{ url_for('admin_toggle_voucher', vid=v.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-xs {% if v.is_active %}btn-warning{% else %}btn-success{% endif %}">
+                  {{ 'Disable' if v.is_active else 'Enable' }}
+                </button>
+              </form>
+              <form method="post" action="{{ url_for('admin_delete_voucher', vid=v.id) }}" style="display:inline;" onsubmit="return confirm('Delete this voucher?')">
+                <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8"><div class="empty"><p>No vouchers yet. Create one!</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add Voucher Modal -->
+<div id="addVoucherModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:28px;width:480px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto;">
+    <h3 style="font-size:1rem;font-weight:700;margin-bottom:20px;">🎟️ Create New Voucher</h3>
+    <form method="post" action="{{ url_for('admin_add_voucher') }}">
+      <div class="form-grid form-grid-2" style="gap:14px;">
+        <div class="form-group full">
+          <label>Voucher Code <span style="color:var(--muted);font-weight:400;">(auto-uppercased)</span></label>
+          <input type="text" name="code" placeholder="e.g. SAVE20" required style="text-transform:uppercase;font-family:monospace;letter-spacing:.05em;">
+        </div>
+        <div class="form-group">
+          <label>Discount %</label>
+          <input type="number" name="discount_pct" placeholder="0" min="0" max="100" step="0.1" value="0">
+          <span class="form-hint">0 = not used</span>
+        </div>
+        <div class="form-group">
+          <label>Flat Discount (৳)</label>
+          <input type="number" name="discount_amt" placeholder="0" min="0" step="1" value="0">
+          <span class="form-hint">0 = not used</span>
+        </div>
+        <div class="form-group">
+          <label>Minimum Order (৳)</label>
+          <input type="number" name="min_order" placeholder="0" min="0" step="1" value="0">
+        </div>
+        <div class="form-group">
+          <label>Max Uses</label>
+          <input type="number" name="max_uses" placeholder="Leave blank = unlimited" min="1">
+        </div>
+        <div class="form-group">
+          <label>Expires On</label>
+          <input type="date" name="expires_at">
+          <span class="form-hint">Leave blank = no expiry</span>
+        </div>
+        <div class="form-group full">
+          <label>Assign to Specific User <span style="color:var(--muted);font-weight:400;">(leave blank = public)</span></label>
+          <select name="user_id">
+            <option value="">— Public (all users) —</option>
+            {% for u in users %}
+            <option value="{{ u.id }}">{{ u.name }} ({{ u.email if u.email else u.id }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button type="submit" class="btn btn-primary" style="flex:1;">Create Voucher</button>
+        <button type="button" onclick="document.getElementById('addVoucherModal').style.display='none'" class="btn btn-outline">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

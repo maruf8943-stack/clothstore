@@ -1,0 +1,99 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Order #{{ order.id }}{% endblock %}
+{% block page_title %}Order #{{ order.id }}{% endblock %}
+{% block breadcrumb %}
+  <span class="breadcrumb">/ <a href="{{ url_for('admin_orders') }}">Orders</a> / #{{ order.id }}</span>
+{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_orders') }}" class="btn btn-outline btn-sm">← Back</a>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;">
+
+  <!-- Left: Items -->
+  <div>
+    <div class="card">
+      <div class="card-header"><h3>Order Items</h3></div>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Product</th><th>Size</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td style="display:flex;align-items:center;gap:10px;">
+              <img src="{{ item.image }}" alt="{{ item.product_name }}"
+                   onerror="this.src='https://via.placeholder.com/44?text=IMG'">
+              <strong style="font-size:.83rem;">{{ item.product_name }}</strong>
+            </td>
+            <td>{{ item.size }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>৳{{ "%.0f"|format(item.price) }}</td>
+            <td><strong>৳{{ "%.0f"|format(item.price * item.quantity) }}</strong></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div style="padding:16px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;">
+        <div style="text-align:right;">
+          <div style="font-size:.82rem;color:var(--muted);">Order Total</div>
+          <div style="font-size:1.4rem;font-weight:800;color:var(--accent);">৳{{ "%.0f"|format(order.total) }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Info + Status -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+
+    <!-- Status -->
+    <div class="card">
+      <div class="card-header"><h3>Update Status</h3></div>
+      <div class="card-body">
+        <div style="margin-bottom:10px;">
+          Current: <span class="badge status-{{ order.status }}">{{ order.status|capitalize }}</span>
+        </div>
+        <form method="post" action="{{ url_for('admin_update_order_status', oid=order.id) }}">
+          <input type="hidden" name="next" value="{{ url_for('admin_order_detail', oid=order.id) }}">
+          <div class="form-group" style="margin-bottom:10px;">
+            <select name="status" style="width:100%;">
+              {% for s in ['pending','processing','shipped','delivered','cancelled'] %}
+              <option value="{{ s }}" {% if order.status==s %}selected{% endif %}>{{ s|capitalize }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Update Status</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Customer -->
+    <div class="card">
+      <div class="card-header"><h3>Customer Info</h3></div>
+      <div class="card-body">
+        <div class="info-row"><span>Name</span><strong>{{ order.customer }}</strong></div>
+        <div class="info-row"><span>Email</span><span style="font-size:.8rem;">{{ order.email }}</span></div>
+        <div class="info-row"><span>Phone</span><strong>{{ order.phone }}</strong></div>
+        <div class="info-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+          <span>Address</span>
+          <span style="font-size:.82rem;color:var(--muted);">{{ order.address }}</span>
+        </div>
+        <div class="info-row"><span>Date</span><span>{{ order.created_at.strftime('%d %b %Y, %I:%M %p') }}</span></div>
+      </div>
+    </div>
+
+    <!-- Danger zone -->
+    <div class="card" style="border-color:#fecaca;">
+      <div class="card-header" style="background:#fff5f5;"><h3 style="color:#991b1b;">Danger Zone</h3></div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('admin_delete_order', oid=order.id) }}"
+              onsubmit="return confirm('Permanently delete order #{{ order.id }}?')">
+          <button type="submit" class="btn btn-danger" style="width:100%;">🗑 Delete This Order</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ClothStore — Men & Kids Fashion{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👕</text></svg>">
+</head>
+<body>
+
+<!-- Announcement Bar (editable from admin) -->
+<div class="announce-bar">
+  {{ site.get('announcement_bar', 'Free delivery on orders above ৳2,000 | New arrivals every week!') }}
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-container">
+    {% for cat, msg in messages %}
+    <div class="flash {{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<!-- Header -->
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <a href="{{ url_for('index') }}" class="logo">CLOTH<span>STORE</span></a>
+
+      <nav class="nav-links">
+        <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>Home</a>
+        <a href="{{ url_for('products') }}" {% if request.endpoint == 'products' %}class="active"{% endif %}>All Products</a>
+        <a href="{{ url_for('products', gender='men') }}">Men</a>
+        <a href="{{ url_for('products', gender='kid') }}">Kids</a>
+        {% if session.user_id %}
+        <a href="{{ url_for('my_orders') }}" {% if request.endpoint in ['my_orders','order_tracking'] %}class="active"{% endif %}>My Orders</a>
+        {% endif %}
+      </nav>
+
+      <form class="header-search" action="{{ url_for('products') }}" method="get">
+        <input type="text" name="search" placeholder="Search products..." value="{{ request.args.get('search', '') }}">
+        <button type="submit">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+      </form>
+
+      <div class="header-actions">
+        {% if session.user_id %}
+          {% if session.is_admin %}
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-sm btn-outline">Admin</a>
+          {% endif %}
+          <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline">Logout</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline">Login</a>
+          <a href="{{ url_for('register') }}" class="btn btn-sm btn-accent">Register</a>
+        {% endif %}
+
+        <a href="{{ url_for('cart') }}" class="cart-btn" title="Cart">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+          {% if cart_count > 0 %}
+          <span class="cart-count">{{ cart_count }}</span>
+          {% endif %}
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Category Bar -->
+<div class="cat-bar">
+  <div class="container">
+    <div class="cat-bar-inner">
+      <a href="{{ url_for('products', category='t-shirt') }}" {% if request.args.get('category') == 't-shirt' %}class="active"{% endif %}>T-Shirts</a>
+      <a href="{{ url_for('products', category='shirt') }}" {% if request.args.get('category') == 'shirt' %}class="active"{% endif %}>Shirts</a>
+      <a href="{{ url_for('products', category='pant') }}" {% if request.args.get('category') == 'pant' %}class="active"{% endif %}>Pants</a>
+      <a href="{{ url_for('products', gender='men') }}">Men's Collection</a>
+      <a href="{{ url_for('products', gender='kid') }}">Kids' Collection</a>
+      <a href="{{ url_for('products', is_new=1) }}">New Arrivals</a>
+    </div>
+  </div>
+</div>
+
+{% block content %}{% endblock %}
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <span class="logo">CLOTH<span>STORE</span></span>
+        <p>Your trusted destination for premium men's and kids' fashion. Quality clothing at great prices.</p>
+        <div class="footer-badges" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+          <span style="background:rgba(255,255,255,.12);padding:4px 10px;border-radius:20px;font-size:.78rem;">{{ site.get('feature_badge_1','✅ Premium Quality') }}</span>
+          <span style="background:rgba(255,255,255,.12);padding:4px 10px;border-radius:20px;font-size:.78rem;">{{ site.get('feature_badge_2','🚚 Fast Delivery') }}</span>
+          <span style="background:rgba(255,255,255,.12);padding:4px 10px;border-radius:20px;font-size:.78rem;">{{ site.get('feature_badge_3','↩️ Easy Returns') }}</span>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Shop</h4>
+        <ul>
+          <li><a href="{{ url_for('products', category='t-shirt') }}">T-Shirts</a></li>
+          <li><a href="{{ url_for('products', category='shirt') }}">Shirts</a></li>
+          <li><a href="{{ url_for('products', category='pant') }}">Pants</a></li>
+          <li><a href="{{ url_for('products', gender='kid') }}">Kids</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <ul>
+          <li><a href="{{ url_for('login') }}">Login</a></li>
+          <li><a href="{{ url_for('register') }}">Register</a></li>
+          <li><a href="{{ url_for('cart') }}">My Cart</a></li>
+          {% if session.user_id %}<li><a href="{{ url_for('my_orders') }}">My Orders</a></li>{% endif %}
+          {% if session.user_id %}<li><a href="{{ url_for('user_chat') }}">💬 Live Chat</a></li>{% endif %}
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Payment</h4>
+        <ul>
+          <li>📱 bKash: <strong>{{ site.get('bkash_number','') }}</strong></li>
+          <li>📱 Nagad: <strong>{{ site.get('nagad_number','') }}</strong></li>
+          <li>📱 Rocket: <strong>{{ site.get('rocket_number','') }}</strong></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2024 ClothStore. All rights reserved.</span>
+      <span>Made with Flask &amp; MySQL</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Floating Chat Button (logged-in users only) -->
+{% if session.user_id and not session.is_admin %}
+<a href="{{ url_for('user_chat') }}" class="chat-fab" title="Live Chat Support">
+  <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+  </svg>
+  <span>Chat</span>
+</a>
+{% endif %}
+
+<style>
+.chat-fab{
+  position:fixed;bottom:28px;right:28px;z-index:999;
+  background:#e11d48;color:#fff;border-radius:50px;
+  display:flex;align-items:center;gap:8px;padding:12px 20px;
+  box-shadow:0 4px 20px rgba(225,29,72,.4);
+  font-weight:700;font-size:.85rem;text-decoration:none;
+  transition:transform .2s, box-shadow .2s;
+}
+.chat-fab:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(225,29,72,.5);}
+</style>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
