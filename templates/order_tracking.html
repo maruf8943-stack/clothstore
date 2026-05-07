@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}Track Order #{{ order.id }} — ClothStore{% endblock %}
+{% block content %}
+<div class="container" style="padding:40px 20px;max-width:800px;">
+  <a href="{{ url_for('my_orders') }}" style="font-size:.83rem;color:#e11d48;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:20px;">
+    ← Back to My Orders
+  </a>
+
+  <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden;margin-bottom:20px;">
+    <div style="padding:20px 24px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h2 style="font-size:1.15rem;font-weight:800;">Order #{{ order.id }}</h2>
+        <p style="font-size:.82rem;color:#94a3b8;margin-top:2px;">Placed on {{ order.created_at.strftime('%d %B %Y at %I:%M %p') if order.created_at else 'N/A' }}</p>
+      </div>
+      <span class="track-status status-{{ order.status }}">{{ order.status|upper }}</span>
+    </div>
+
+    <!-- Status Stepper -->
+    <div style="padding:24px;">
+      {% set steps = [('pending','Order Placed','🛒'),('processing','Processing','⚙️'),('shipped','Shipped','🚚'),('delivered','Delivered','✅')] %}
+      {% set status_order = {'pending':0,'processing':1,'shipped':2,'delivered':3,'cancelled':-1} %}
+      {% set current_idx = status_order.get(order.status, 0) %}
+
+      {% if order.status == 'cancelled' %}
+      <div style="text-align:center;padding:20px;color:#dc2626;font-weight:700;font-size:1rem;">
+        ❌ This order has been cancelled.
+      </div>
+      {% else %}
+      <div class="stepper">
+        {% for s_key, s_label, s_icon in steps %}
+        {% set s_idx = loop.index0 %}
+        <div class="step {% if s_idx < current_idx %}done{% elif s_idx == current_idx %}active{% endif %}">
+          <div class="step-circle">{{ s_icon if s_idx <= current_idx else '' }}</div>
+          <div class="step-label">{{ s_label }}</div>
+        </div>
+        {% if not loop.last %}<div class="step-line {% if s_idx < current_idx %}done{% endif %}"></div>{% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Tracking Note from Admin -->
+      {% if order.tracking_note %}
+      <div style="margin-top:20px;background:#eff6ff;border-radius:10px;padding:14px 18px;border-left:4px solid #3b82f6;">
+        <p style="font-size:.78rem;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">📍 Latest Update from Store</p>
+        <p style="font-size:.88rem;color:#1e40af;">{{ order.tracking_note }}</p>
+      </div>
+      {% endif %}
+
+      <!-- Admin Note -->
+      {% if order.admin_note %}
+      <div style="margin-top:14px;background:#fefce8;border-radius:10px;padding:14px 18px;border-left:4px solid #eab308;">
+        <p style="font-size:.78rem;font-weight:700;color:#854d0e;text-transform:uppercase;margin-bottom:6px;">📝 Note from Store</p>
+        <p style="font-size:.88rem;color:#854d0e;">{{ order.admin_note }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Order Info -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+    <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px;">
+      <h4 style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:10px;">Delivery Address</h4>
+      <p style="font-size:.88rem;font-weight:600;">{{ order.name }}</p>
+      <p style="font-size:.83rem;color:#64748b;">📱 {{ order.phone }}</p>
+      <p style="font-size:.83rem;color:#64748b;margin-top:4px;">{{ order.address }}</p>
+    </div>
+    <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px;">
+      <h4 style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:10px;">Payment Summary</h4>
+      <div style="display:flex;justify-content:space-between;font-size:.83rem;padding:4px 0;color:#64748b;">
+        <span>Payment Method</span><strong>{{ (order.payment_method or 'cod')|upper }}</strong>
+      </div>
+      {% if order.discount_amount and order.discount_amount > 0 %}
+      <div style="display:flex;justify-content:space-between;font-size:.83rem;padding:4px 0;color:#16a34a;">
+        <span>Discount Applied</span><strong>-৳{{ "%.0f"|format(order.discount_amount) }}</strong>
+      </div>
+      {% endif %}
+      <div style="display:flex;justify-content:space-between;font-size:1rem;padding:8px 0 0;font-weight:800;border-top:1.5px solid #e2e8f0;margin-top:6px;">
+        <span>Total</span><span style="color:#e11d48;">৳{{ "%.0f"|format(order.total) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Items -->
+  <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+    <div style="padding:14px 20px;border-bottom:1px solid #e2e8f0;font-size:.88rem;font-weight:700;">Order Items</div>
+    {% for item in items %}
+    <div style="display:flex;gap:14px;padding:14px 20px;border-bottom:1px solid #f8fafc;align-items:center;">
+      {% if item.image %}
+      <img src="{{ item.image }}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;">
+      {% endif %}
+      <div style="flex:1;">
+        <p style="font-weight:600;font-size:.88rem;">{{ item.product_name }}</p>
+        <p style="font-size:.78rem;color:#94a3b8;">Size: {{ item.size }} &nbsp;×&nbsp; {{ item.quantity }}</p>
+      </div>
+      <strong style="font-size:.9rem;">৳{{ "%.0f"|format(item.price * item.quantity) }}</strong>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div style="text-align:center;margin-top:24px;">
+    <a href="{{ url_for('user_chat') }}" class="btn btn-outline">💬 Chat with Support</a>
+  </div>
+</div>
+
+<style>
+.track-status{padding:5px 14px;border-radius:20px;font-size:.75rem;font-weight:800;letter-spacing:.05em;}
+.status-pending{background:#fef3c7;color:#92400e;}
+.status-processing{background:#dbeafe;color:#1e40af;}
+.status-shipped{background:#e0f2fe;color:#075985;}
+.status-delivered{background:#dcfce7;color:#166534;}
+.status-cancelled{background:#fee2e2;color:#991b1b;}
+
+.stepper{display:flex;align-items:center;padding:10px 0;}
+.step{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:70px;}
+.step-circle{width:40px;height:40px;border-radius:50%;background:#f1f5f9;border:2px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#94a3b8;transition:all .3s;}
+.step.done .step-circle{background:#dcfce7;border-color:#16a34a;color:#16a34a;}
+.step.active .step-circle{background:#e11d48;border-color:#e11d48;color:#fff;font-size:.9rem;box-shadow:0 0 0 4px rgba(225,29,72,.15);}
+.step-label{font-size:.72rem;font-weight:600;color:#94a3b8;text-align:center;}
+.step.done .step-label,.step.active .step-label{color:#1e293b;}
+.step-line{flex:1;height:2px;background:#e2e8f0;margin-bottom:20px;}
+.step-line.done{background:#16a34a;}
+</style>
+{% endblock %}

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin{% endblock %} — ClothStore</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --sidebar:#0f172a; --sidebar-hover:#1e293b; --sidebar-active:#e11d48;
+      --accent:#e11d48; --accent2:#f59e0b;
+      --bg:#f1f5f9; --white:#fff; --border:#e2e8f0;
+      --text:#1e293b; --muted:#64748b; --radius:10px;
+      --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+    }
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);}
+    a{text-decoration:none;color:inherit;}
+    .admin-wrap{display:flex;min-height:100vh;}
+    .admin-sidebar{width:220px;min-height:100vh;background:var(--sidebar);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+    .sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.08);font-size:1.1rem;font-weight:800;letter-spacing:-.5px;color:#fff;}
+    .sidebar-logo span{color:var(--accent);}
+    .sidebar-section{padding:12px 12px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.3);}
+    .admin-nav{padding:8px 0;flex:1;overflow-y:auto;}
+    .admin-nav a{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:.85rem;font-weight:500;color:rgba(255,255,255,.65);border-radius:6px;margin:2px 8px;transition:all .15s;}
+    .admin-nav a:hover{background:var(--sidebar-hover);color:#fff;}
+    .admin-nav a.active{background:var(--accent);color:#fff;}
+    .admin-nav a svg{flex-shrink:0;opacity:.8;}
+    .admin-nav a.active svg{opacity:1;}
+    .nav-badge{margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;}
+    .admin-nav a.active .nav-badge{background:rgba(255,255,255,.3);}
+    .sidebar-bottom{padding:12px;border-top:1px solid rgba(255,255,255,.08);}
+    .admin-main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+    .admin-topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+    .topbar-left{display:flex;align-items:center;gap:12px;}
+    .topbar-left h1{font-size:1.1rem;font-weight:700;}
+    .breadcrumb{font-size:.78rem;color:var(--muted);}
+    .breadcrumb a{color:var(--accent);}
+    .topbar-right{display:flex;align-items:center;gap:12px;}
+    .topbar-user{font-size:.82rem;font-weight:600;color:var(--muted);}
+    .admin-body{padding:24px 28px;flex:1;}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px;}
+    .stat-card{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border:1px solid var(--border);}
+    .stat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+    .stat-num{font-size:1.7rem;font-weight:800;color:var(--accent);line-height:1;}
+    .stat-label{font-size:.78rem;color:var(--muted);margin-top:4px;font-weight:500;}
+    .stat-sub{font-size:.72rem;color:var(--muted);margin-top:2px;}
+    .card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;margin-bottom:20px;}
+    .card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+    .card-header h3{font-size:.95rem;font-weight:700;}
+    .card-body{padding:20px;}
+    .admin-table{width:100%;border-collapse:collapse;font-size:.83rem;}
+    .admin-table th{padding:10px 14px;text-align:left;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:#f8fafc;border-bottom:1px solid var(--border);}
+    .admin-table td{padding:12px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+    .admin-table tr:last-child td{border-bottom:none;}
+    .admin-table tr:hover td{background:#fafafa;}
+    .admin-table img{width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--border);}
+    .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:.72rem;font-weight:600;gap:4px;}
+    .badge-green{background:#dcfce7;color:#166534;}
+    .badge-red{background:#fee2e2;color:#991b1b;}
+    .badge-amber{background:#fef3c7;color:#92400e;}
+    .badge-blue{background:#dbeafe;color:#1e40af;}
+    .badge-purple{background:#ede9fe;color:#5b21b6;}
+    .badge-gray{background:#f1f5f9;color:#475569;}
+    .badge-pink{background:#fce7f3;color:#9d174d;}
+    .status-pending{background:#fef3c7;color:#92400e;}
+    .status-processing{background:#dbeafe;color:#1e40af;}
+    .status-shipped{background:#e0f2fe;color:#075985;}
+    .status-delivered{background:#dcfce7;color:#166534;}
+    .status-cancelled{background:#fee2e2;color:#991b1b;}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;font-size:.82rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;text-decoration:none;}
+    .btn-primary{background:var(--accent);color:#fff;}
+    .btn-primary:hover{background:#be123c;}
+    .btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text);}
+    .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+    .btn-danger{background:#fee2e2;color:#991b1b;border:none;}
+    .btn-danger:hover{background:#fecaca;}
+    .btn-success{background:#dcfce7;color:#166534;border:none;}
+    .btn-warning{background:#fef3c7;color:#92400e;border:none;}
+    .btn-sm{padding:5px 12px;font-size:.78rem;}
+    .btn-xs{padding:3px 8px;font-size:.72rem;}
+    .btn-icon{padding:6px;border-radius:6px;}
+    .form-grid{display:grid;gap:16px;}
+    .form-grid-2{grid-template-columns:1fr 1fr;}
+    .form-grid-3{grid-template-columns:1fr 1fr 1fr;}
+    .form-group{display:flex;flex-direction:column;gap:6px;}
+    .form-group.full{grid-column:1/-1;}
+    .form-group label{font-size:.8rem;font-weight:600;color:var(--text);}
+    .form-group input,.form-group select,.form-group textarea{padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:.85rem;color:var(--text);background:#fff;width:100%;transition:border-color .15s;font-family:inherit;}
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(225,29,72,.08);}
+    .form-group textarea{resize:vertical;min-height:80px;}
+    .form-check{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem;font-weight:500;}
+    .form-check input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);}
+    .form-hint{font-size:.75rem;color:var(--muted);}
+    .img-preview{width:100px;height:100px;object-fit:cover;border-radius:8px;border:2px solid var(--border);display:block;margin-top:8px;}
+    .filter-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .filter-bar input,.filter-bar select{padding:7px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:.82rem;background:#fff;min-width:120px;}
+    .filter-bar input:focus,.filter-bar select:focus{outline:none;border-color:var(--accent);}
+    .flash-wrap{margin-bottom:16px;}
+    .flash{padding:10px 16px;border-radius:8px;font-size:.85rem;font-weight:500;margin-bottom:8px;}
+    .flash.success{background:#dcfce7;color:#166534;border:1px solid #bbf7d0;}
+    .flash.error{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;}
+    .empty{text-align:center;padding:48px 20px;color:var(--muted);}
+    .empty svg{opacity:.3;margin-bottom:12px;}
+    .empty p{font-size:.9rem;}
+    .upload-area{border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:border-color .15s;}
+    .upload-area:hover{border-color:var(--accent);}
+    .upload-area input{display:none;}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .info-box{background:#f8fafc;border-radius:8px;padding:14px;}
+    .info-box h4{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px;}
+    .info-row{display:flex;justify-content:space-between;padding:4px 0;font-size:.83rem;border-bottom:1px solid var(--border);}
+    .info-row:last-child{border-bottom:none;}
+    @media(max-width:768px){
+      .admin-sidebar{width:60px;}
+      .admin-sidebar .sidebar-logo span,.admin-nav a span,.sidebar-section,.sidebar-bottom{display:none;}
+      .admin-main{margin-left:60px;}
+      .form-grid-2,.form-grid-3{grid-template-columns:1fr;}
+      .stats-grid{grid-template-columns:1fr 1fr;}
+    }
+  </style>
+</head>
+<body>
+<div class="admin-wrap">
+  <aside class="admin-sidebar">
+    <a href="{{ url_for('index') }}" class="sidebar-logo">CLOTH<span>STORE</span></a>
+    <nav class="admin-nav">
+      <div class="sidebar-section">Main</div>
+      <a href="{{ url_for('admin_dashboard') }}" {% if request.endpoint=='admin_dashboard' %}class="active"{% endif %}>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Dashboard</span>
+      </a>
+
+      <div class="sidebar-section">Manage</div>
+      <a href="{{ url_for('admin_products') }}" {% if 'product' in request.endpoint %}class="active"{% endif %}>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        <span>Product Control</span>
+      </a>
+      <a href="{{ url_for('admin_orders') }}" {% if 'order' in request.endpoint %}class="active"{% endif %}>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        <span>Orders</span>
+        {% if pending_count is defined and pending_count %}<span class="nav-badge">{{ pending_count }}</span>{% endif %}
+      </a>
+      <a href="{{ url_for('admin_users') }}" {% if 'user' in request.endpoint and 'chat' not in request.endpoint %}class="active"{% endif %}>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        <span>Users</span>
+      </a>
+      <a href="{{ url_for('admin_vouchers') }}" {% if 'voucher' in request.endpoint %}class="active"{% endif %}>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        <span>Vouchers</span>
+      </a>
+
+      <div class="sidebar-section">Content</div>
+      <a href="{{ url_for('admin_banners') }}" {% if request.endpoint=='admin_banners' %}class="active"{% endif %}>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <span>Banners & Pay</span>
+      </a>
+      <a href="{{ url_for('admin_homepage') }}" {% if request.endpoint=='admin_homepage' %}class="active"{% endif %}>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Homepage</span>
+      </a>
+      <a href="{{ url_for('admin_chat_list') }}" {% if 'chat' in request.endpoint %}class="active"{% endif %}>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        <span>Live Chat</span>
+        {% if unread_chat_count is defined and unread_chat_count %}<span class="nav-badge">{{ unread_chat_count }}</span>{% endif %}
+      </a>
+
+      <div class="sidebar-section">System</div>
+      <a href="{{ url_for('admin_settings') }}" {% if request.endpoint=='admin_settings' %}class="active"{% endif %}>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M2 12h2M20 12h2M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41"/></svg>
+        <span>Settings</span>
+      </a>
+      <a href="{{ url_for('index') }}">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>View Store</span>
+      </a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="{{ url_for('logout') }}" style="color:rgba(255,255,255,.5);margin:0;padding:10px 8px;display:flex;align-items:center;gap:10px;font-size:.85rem;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <div class="topbar-left">
+        <h1>{% block page_title %}{% endblock %}</h1>
+        {% block breadcrumb %}{% endblock %}
+      </div>
+      <div class="topbar-right">
+        {% block topbar_actions %}{% endblock %}
+        <span class="topbar-user">👤 {{ session.username }}</span>
+      </div>
+    </div>
+    <div class="admin-body">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-wrap">
+          {% for cat, msg in messages %}
+          <div class="flash {{ cat }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

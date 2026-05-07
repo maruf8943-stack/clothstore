@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Cart — ClothStore{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <h1 class="section-title" style="margin-bottom:32px;">Shopping Cart</h1>
+
+    {% if items %}
+    <div class="cart-layout">
+
+      <!-- Cart Items -->
+      <div>
+        <div class="cart-table">
+          {% for item in items %}
+          <div class="cart-item">
+            <img class="cart-item-img" src="{{ item.image }}" alt="{{ item.name }}">
+            <div>
+              <div class="cart-item-name">{{ item.name }}</div>
+              <div class="cart-item-meta">Size: {{ item.size }}</div>
+              <div style="font-size:.85rem;color:var(--accent);font-weight:700;margin-top:4px;">৳{{ "%.0f"|format(item.price) }}</div>
+            </div>
+
+            <!-- Quantity Form -->
+            <form action="{{ url_for('update_cart') }}" method="post" style="display:flex;align-items:center;gap:6px;">
+              <input type="hidden" name="cart_id" value="{{ item.id }}">
+              <div class="qty-control">
+                <button type="button" onclick="this.nextElementSibling.stepDown();this.form.submit()">−</button>
+                <input type="number" name="quantity" value="{{ item.quantity }}" min="0" max="99" class="cart-qty-input">
+                <button type="button" onclick="this.previousElementSibling.stepUp();this.form.submit()">+</button>
+              </div>
+            </form>
+
+            <div style="font-weight:700;font-size:.95rem;">৳{{ "%.0f"|format(item.price * item.quantity) }}</div>
+
+            <a href="{{ url_for('remove_from_cart', cid=item.id) }}" style="color:var(--accent);font-size:1.2rem;" title="Remove">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div style="display:flex;justify-content:space-between;margin-top:16px;">
+          <a href="{{ url_for('products') }}" class="btn btn-outline">← Continue Shopping</a>
+        </div>
+      </div>
+
+      <!-- Order Summary -->
+      <div class="order-summary">
+        <h3>Order Summary</h3>
+        <div class="summary-row">
+          <span>Subtotal ({{ items|length }} item{% if items|length != 1 %}s{% endif %})</span>
+          <span>৳{{ "%.0f"|format(subtotal) }}</span>
+        </div>
+        <div class="summary-row">
+          <span>Delivery</span>
+          <span>{% if subtotal >= 2000 %}<span style="color:#10b981;font-weight:600;">FREE</span>{% else %}৳80{% endif %}</span>
+        </div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <span>৳{{ "%.0f"|format(subtotal + (0 if subtotal >= 2000 else 80)) }}</span>
+        </div>
+        <a href="{{ url_for('checkout') }}" class="btn btn-accent btn-block" style="margin-top:20px;">
+          Proceed to Checkout →
+        </a>
+        {% if subtotal < 2000 %}
+        <p style="text-align:center;font-size:.78rem;color:var(--muted);margin-top:12px;">
+          Add ৳{{ "%.0f"|format(2000 - subtotal) }} more for free delivery!
+        </p>
+        {% endif %}
+      </div>
+
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      <h3>Your cart is empty</h3>
+      <p>Discover our latest collection and add items to your cart.</p>
+      <a href="{{ url_for('products') }}" class="btn btn-accent">Start Shopping</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

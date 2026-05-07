@@ -1,0 +1,137 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Homepage Manager{% endblock %}
+{% block page_title %}🏠 Homepage Manager{% endblock %}
+{% block content %}
+
+<form method="post" id="homepageForm">
+
+  <!-- ── SECTION TITLES ───────────────────────────────────── -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header"><h3>📝 Section Titles</h3></div>
+    <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+      <div>
+        <p style="font-size:.78rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Category Section</p>
+        <div class="form-group"><label>Title</label><input type="text" name="section_cat_title" value="{{ s.get('section_cat_title','Shop by Category') }}"></div>
+        <div class="form-group"><label>Subtitle</label><input type="text" name="section_cat_sub" value="{{ s.get('section_cat_sub','Find what fits your style') }}"></div>
+      </div>
+      <div>
+        <p style="font-size:.78rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Featured Section</p>
+        <div class="form-group"><label>Title</label><input type="text" name="section_featured_title" value="{{ s.get('section_featured_title','Featured Products') }}"></div>
+        <div class="form-group"><label>Subtitle</label><input type="text" name="section_featured_sub" value="{{ s.get('section_featured_sub','Handpicked just for you') }}"></div>
+      </div>
+      <div>
+        <p style="font-size:.78rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">New Arrivals Section</p>
+        <div class="form-group"><label>Title</label><input type="text" name="section_new_title" value="{{ s.get('section_new_title','New Arrivals') }}"></div>
+        <div class="form-group"><label>Subtitle</label><input type="text" name="section_new_sub" value="{{ s.get('section_new_sub','Just landed this week') }}"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CATEGORY CARDS ───────────────────────────────────── -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header"><h3>🗂️ Category Cards (6 cards on homepage)</h3></div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        {% for i in range(1,7) %}
+        <div style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;">
+          <!-- Image preview header -->
+          <div style="height:120px;position:relative;overflow:hidden;background:#f1f5f9;">
+            <img id="cat_prev_{{ i }}" src="{{ s.get('cat_'~i~'_img','') }}"
+                 style="width:100%;height:100%;object-fit:cover;"
+                 onerror="this.style.display='none'">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.6),transparent);display:flex;align-items:flex-end;padding:10px;">
+              <div>
+                <div style="font-weight:700;color:#fff;font-size:.9rem;" id="cat_lbl_{{ i }}">{{ s.get('cat_'~i~'_label','Card '~i) }}</div>
+                <div style="color:rgba(255,255,255,.7);font-size:.72rem;" id="cat_sub_{{ i }}">{{ s.get('cat_'~i~'_sub','') }}</div>
+              </div>
+            </div>
+          </div>
+          <div style="padding:14px;display:flex;flex-direction:column;gap:8px;">
+            <div class="form-group" style="margin:0;">
+              <label>Label</label>
+              <input type="text" name="cat_{{ i }}_label" value="{{ s.get('cat_'~i~'_label','') }}"
+                     oninput="document.getElementById('cat_lbl_{{ i }}').textContent=this.value">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>Subtitle</label>
+              <input type="text" name="cat_{{ i }}_sub" value="{{ s.get('cat_'~i~'_sub','') }}"
+                     oninput="document.getElementById('cat_sub_{{ i }}').textContent=this.value">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>Link URL</label>
+              <input type="text" name="cat_{{ i }}_url" value="{{ s.get('cat_'~i~'_url','') }}" placeholder="/products?category=t-shirt&gender=men">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>Image URL</label>
+              <input type="text" name="cat_{{ i }}_img" value="{{ s.get('cat_'~i~'_img','') }}"
+                     placeholder="https://..."
+                     oninput="updateImg('cat_prev_{{ i }}', this.value)">
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PROMO BANNERS ─────────────────────────────────────── -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header"><h3>🖼️ Promo Banners (2 banners between Featured & New Arrivals)</h3></div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        {% for i in range(1,3) %}
+        <div style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;">
+          <!-- Live preview -->
+          <div style="height:140px;position:relative;overflow:hidden;background:#1e293b;">
+            <img id="promo_prev_{{ i }}" src="{{ s.get('promo_'~i~'_img','') }}"
+                 style="width:100%;height:100%;object-fit:cover;opacity:.5;"
+                 onerror="this.style.display='none'">
+            <div style="position:absolute;inset:0;padding:18px;background:linear-gradient(to right,rgba(15,23,42,.85) 50%,transparent);">
+              <div style="font-weight:800;color:#fff;font-size:1rem;margin-bottom:4px;" id="promo_ttl_{{ i }}">{{ s.get('promo_'~i~'_title','Banner '~i) }}</div>
+              <div style="color:rgba(255,255,255,.7);font-size:.78rem;margin-bottom:10px;" id="promo_txt_{{ i }}">{{ s.get('promo_'~i~'_text','') }}</div>
+              <span style="background:#e11d48;color:#fff;padding:5px 14px;border-radius:20px;font-size:.72rem;font-weight:700;" id="promo_btn_{{ i }}">{{ s.get('promo_'~i~'_btn','Shop Now') }}</span>
+            </div>
+          </div>
+          <div style="padding:14px;display:flex;flex-direction:column;gap:8px;">
+            <div class="form-group" style="margin:0;">
+              <label>Title</label>
+              <input type="text" name="promo_{{ i }}_title" value="{{ s.get('promo_'~i~'_title','') }}"
+                     oninput="document.getElementById('promo_ttl_{{ i }}').textContent=this.value">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>Description</label>
+              <input type="text" name="promo_{{ i }}_text" value="{{ s.get('promo_'~i~'_text','') }}"
+                     oninput="document.getElementById('promo_txt_{{ i }}').textContent=this.value">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>Button Text</label>
+              <input type="text" name="promo_{{ i }}_btn" value="{{ s.get('promo_'~i~'_btn','Shop Now →') }}"
+                     oninput="document.getElementById('promo_btn_{{ i }}').textContent=this.value">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>Link URL</label>
+              <input type="text" name="promo_{{ i }}_url" value="{{ s.get('promo_'~i~'_url','') }}" placeholder="/products?gender=men">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>Image URL</label>
+              <input type="text" name="promo_{{ i }}_img" value="{{ s.get('promo_'~i~'_img','') }}"
+                     placeholder="https://..."
+                     oninput="updateImg('promo_prev_{{ i }}', this.value)">
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary" style="padding:13px 40px;font-size:.95rem;">💾 Save Homepage Settings</button>
+</form>
+
+<script>
+function updateImg(id, src) {
+  const img = document.getElementById(id);
+  if (img) { img.src = src; img.style.display = 'block'; }
+}
+</script>
+{% endblock %}

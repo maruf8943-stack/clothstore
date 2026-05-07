@@ -1,0 +1,124 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Banners & Settings{% endblock %}
+{% block page_title %}🏷️ Banners, Hero & Payment Settings{% endblock %}
+{% block content %}
+
+<form method="post">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+
+    <div class="card">
+      <div class="card-header"><h3>🦸 Hero Section</h3></div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+        <div class="form-group">
+          <label>Badge Pill Text</label>
+          <input type="text" name="hero_badge" value="{{ settings.get('hero_badge','🔥 New Collection 2024') }}">
+        </div>
+        <div class="form-group">
+          <label>Hero Title (white, Line 1)</label>
+          <input type="text" name="hero_title" value="{{ settings.get('hero_title','Dress Bold.') }}">
+        </div>
+        <div class="form-group">
+          <label>Hero Subtitle (orange italic, Line 2)</label>
+          <input type="text" name="hero_subtitle" value="{{ settings.get('hero_subtitle','Look Sharp.') }}">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="form-group"><label>Stat 1 Number</label><input type="text" name="hero_stat_1_num" value="{{ settings.get('hero_stat_1_num','500+') }}"></div>
+          <div class="form-group"><label>Stat 1 Label</label><input type="text" name="hero_stat_1_label" value="{{ settings.get('hero_stat_1_label','Products') }}"></div>
+          <div class="form-group"><label>Stat 2 Number</label><input type="text" name="hero_stat_2_num" value="{{ settings.get('hero_stat_2_num','50K+') }}"></div>
+          <div class="form-group"><label>Stat 2 Label</label><input type="text" name="hero_stat_2_label" value="{{ settings.get('hero_stat_2_label','Happy Customers') }}"></div>
+          <div class="form-group"><label>Stat 3 Number</label><input type="text" name="hero_stat_3_num" value="{{ settings.get('hero_stat_3_num','100%') }}"></div>
+          <div class="form-group"><label>Stat 3 Label</label><input type="text" name="hero_stat_3_label" value="{{ settings.get('hero_stat_3_label','Quality') }}"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div class="card">
+        <div class="card-header"><h3>📢 Announcement Bar</h3></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Text shown on top of every page</label>
+            <input type="text" name="announcement_bar" value="{{ settings.get('announcement_bar','') }}">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>🔴 Promo Strip (4 items below hero)</h3></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-group"><label>Item 1</label><input type="text" name="promo_strip_1" value="{{ settings.get('promo_strip_1','Free Delivery above ৳2,000') }}"></div>
+          <div class="form-group"><label>Item 2</label><input type="text" name="promo_strip_2" value="{{ settings.get('promo_strip_2','Easy 7-Day Returns') }}"></div>
+          <div class="form-group"><label>Item 3</label><input type="text" name="promo_strip_3" value="{{ settings.get('promo_strip_3','Authentic Products') }}"></div>
+          <div class="form-group"><label>Item 4</label><input type="text" name="promo_strip_4" value="{{ settings.get('promo_strip_4','24/7 Support') }}"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>✅ Footer Feature Badges</h3></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-group"><label>Badge 1</label><input type="text" name="feature_badge_1" value="{{ settings.get('feature_badge_1','✅ Premium Quality') }}"></div>
+          <div class="form-group"><label>Badge 2</label><input type="text" name="feature_badge_2" value="{{ settings.get('feature_badge_2','🚚 Fast Delivery') }}"></div>
+          <div class="form-group"><label>Badge 3</label><input type="text" name="feature_badge_3" value="{{ settings.get('feature_badge_3','↩️ Easy Returns') }}"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <div class="card-header"><h3>💳 Mobile Payment Numbers</h3></div>
+    <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
+      <div class="form-group">
+        <label>📱 bKash Number</label>
+        <input type="text" name="bkash_number" value="{{ settings.get('bkash_number','') }}" placeholder="01xxxxxxxxx">
+      </div>
+      <div class="form-group">
+        <label>📱 Nagad Number</label>
+        <input type="text" name="nagad_number" value="{{ settings.get('nagad_number','') }}" placeholder="01xxxxxxxxx">
+      </div>
+      <div class="form-group">
+        <label>📱 Rocket Number</label>
+        <input type="text" name="rocket_number" value="{{ settings.get('rocket_number','') }}" placeholder="01xxxxxxxxx">
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Payment Instructions (shown at checkout)</label>
+        <textarea name="payment_instructions" rows="2">{{ settings.get('payment_instructions','') }}</textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <div class="card-header"><h3>👁️ Live Preview</h3></div>
+    <div class="card-body">
+      <div id="previewAnnounce" style="background:#e11d48;color:#fff;text-align:center;padding:8px;font-size:.83rem;border-radius:8px;margin-bottom:16px;">{{ settings.get('announcement_bar','') }}</div>
+      <div style="background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;border-radius:12px;padding:32px;">
+        <span id="pBadge" style="background:#e11d48;color:#fff;padding:4px 14px;border-radius:20px;font-size:.78rem;font-weight:700;display:inline-block;margin-bottom:12px;">{{ settings.get('hero_badge','') }}</span>
+        <h2 id="pTitle" style="font-size:1.8rem;font-weight:900;margin-bottom:4px;">{{ settings.get('hero_title','') }}</h2>
+        <p id="pSub" style="color:#f59e0b;font-size:1.4rem;font-weight:800;font-style:italic;margin-bottom:16px;">{{ settings.get('hero_subtitle','') }}</p>
+        <div style="display:flex;gap:28px;">
+          <div><div id="ps1n" style="font-size:1.2rem;font-weight:900;color:#f59e0b;">{{ settings.get('hero_stat_1_num','500+') }}</div><div id="ps1l" style="font-size:.72rem;color:rgba(255,255,255,.5);text-transform:uppercase;">{{ settings.get('hero_stat_1_label','Products') }}</div></div>
+          <div><div id="ps2n" style="font-size:1.2rem;font-weight:900;color:#f59e0b;">{{ settings.get('hero_stat_2_num','50K+') }}</div><div id="ps2l" style="font-size:.72rem;color:rgba(255,255,255,.5);text-transform:uppercase;">{{ settings.get('hero_stat_2_label','Happy Customers') }}</div></div>
+          <div><div id="ps3n" style="font-size:1.2rem;font-weight:900;color:#f59e0b;">{{ settings.get('hero_stat_3_num','100%') }}</div><div id="ps3l" style="font-size:.72rem;color:rgba(255,255,255,.5);text-transform:uppercase;">{{ settings.get('hero_stat_3_label','Quality') }}</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;">
+    <button type="submit" class="btn btn-primary" style="padding:12px 36px;font-size:.95rem;">💾 Save All Settings</button>
+  </div>
+</form>
+
+<script>
+const previewMap = {
+  announcement_bar:'previewAnnounce', hero_badge:'pBadge', hero_title:'pTitle', hero_subtitle:'pSub',
+  hero_stat_1_num:'ps1n', hero_stat_1_label:'ps1l',
+  hero_stat_2_num:'ps2n', hero_stat_2_label:'ps2l',
+  hero_stat_3_num:'ps3n', hero_stat_3_label:'ps3l',
+};
+Object.entries(previewMap).forEach(([name,id]) => {
+  const inp=document.querySelector(`[name="${name}"]`);
+  const el=document.getElementById(id);
+  if(inp&&el) inp.addEventListener('input',()=>el.textContent=inp.value);
+});
+</script>
+{% endblock %}

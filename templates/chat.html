@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Chat Support — ClothStore{% endblock %}
+{% block content %}
+<div class="container" style="padding:40px 20px;max-width:700px;">
+  <h1 class="page-title" style="margin-bottom:6px;">💬 Live Chat Support</h1>
+  <p style="color:#94a3b8;font-size:.88rem;margin-bottom:24px;">Send us a message and we'll reply as soon as possible.</p>
+
+  <div class="chat-window" id="chatWindow">
+    {% for msg in messages %}
+    <div class="chat-msg chat-{{ msg.sender }}">
+      <div class="chat-bubble">{{ msg.message }}</div>
+      <div class="chat-time">{{ msg.sender|capitalize }} · {{ msg.created_at.strftime('%H:%M') if msg.created_at else '' }}</div>
+    </div>
+    {% endfor %}
+    {% if not messages %}
+    <div style="text-align:center;padding:40px;color:#94a3b8;">
+      <p style="font-size:1rem;">👋 Hi! How can we help you?</p>
+      <p style="font-size:.83rem;margin-top:6px;">Start a conversation below.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="chat-input-bar">
+    <input type="text" id="msgInput" placeholder="Type your message..." autocomplete="off">
+    <button onclick="sendMsg()" id="sendBtn">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+
+<style>
+.chat-window{background:#fff;border:1.5px solid #e2e8f0;border-radius:14px 14px 0 0;padding:20px;min-height:400px;max-height:500px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;}
+.chat-msg{display:flex;flex-direction:column;max-width:75%;}
+.chat-user{align-self:flex-end;align-items:flex-end;}
+.chat-admin{align-self:flex-start;align-items:flex-start;}
+.chat-bubble{padding:10px 16px;border-radius:18px;font-size:.88rem;line-height:1.5;}
+.chat-user .chat-bubble{background:#e11d48;color:#fff;border-bottom-right-radius:4px;}
+.chat-admin .chat-bubble{background:#f1f5f9;color:#1e293b;border-bottom-left-radius:4px;}
+.chat-time{font-size:.7rem;color:#94a3b8;margin-top:3px;padding:0 4px;}
+.chat-input-bar{display:flex;gap:10px;background:#fff;border:1.5px solid #e2e8f0;border-top:none;border-radius:0 0 14px 14px;padding:12px 16px;}
+.chat-input-bar input{flex:1;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:50px;font-size:.88rem;outline:none;}
+.chat-input-bar input:focus{border-color:#e11d48;}
+.chat-input-bar button{background:#e11d48;color:#fff;border:none;border-radius:50%;width:42px;height:42px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+.chat-input-bar button:hover{background:#be123c;}
+</style>
+
+<script>
+let lastId = {% if messages %}{{ messages[-1].id if messages else 0 }}{% else %}0{% endif %};
+
+function scrollBottom(){
+  const w = document.getElementById('chatWindow');
+  w.scrollTop = w.scrollHeight;
+}
+scrollBottom();
+
+function appendMsg(msg){
+  const w = document.getElementById('chatWindow');
+  const div = document.createElement('div');
+  div.className = 'chat-msg chat-' + msg.sender;
+  div.innerHTML = `<div class="chat-bubble">${msg.message}</div><div class="chat-time">${msg.sender.charAt(0).toUpperCase()+msg.sender.slice(1)} · ${msg.time}</div>`;
+  w.appendChild(div);
+  scrollBottom();
+}
+
+function sendMsg(){
+  const input = document.getElementById('msgInput');
+  const msg = input.value.trim();
+  if(!msg) return;
+  input.value = '';
+  fetch('/chat', {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'},
+    body:'message='+encodeURIComponent(msg)
+  }).then(()=>{
+    appendMsg({sender:'user', message:msg, time: new Date().toLocaleTimeString('en-BD',{hour:'2-digit',minute:'2-digit'})});
+  });
+}
+
+document.getElementById('msgInput').addEventListener('keypress', e=>{ if(e.key==='Enter') sendMsg(); });
+
+// Poll for new admin messages every 4s
+setInterval(()=>{
+  fetch('/chat/poll?since='+lastId)
+  .then(r=>r.json()).then(data=>{
+    data.messages.forEach(m=>{
+      if(m.id > lastId){
+        lastId = m.id;
+        appendMsg(m);
+      }
+    });
+  });
+}, 4000);
+</script>
+{% endblock %}

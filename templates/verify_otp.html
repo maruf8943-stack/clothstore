@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Verify OTP — ClothStore{% endblock %}
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div style="font-size:2.5rem;margin-bottom:8px;">📬</div>
+      <h1>Check Your Email</h1>
+      <p>We sent a 6-digit OTP code to your email. Enter it below.</p>
+    </div>
+    <form method="post">
+      <div class="form-group">
+        <label>OTP Code</label>
+        <input type="text" name="otp" placeholder="e.g. 482910" maxlength="6"
+               required autofocus autocomplete="one-time-code"
+               style="font-size:1.6rem;letter-spacing:.4em;text-align:center;font-weight:700;padding:14px;">
+      </div>
+      <button type="submit" class="btn btn-accent btn-full" style="margin-top:8px;">Verify OTP</button>
+    </form>
+    <p class="auth-switch" style="margin-top:16px;">
+      Didn't receive it? <a href="{{ url_for('forgot_password') }}">Try again</a>
+    </p>
+    <p style="font-size:.78rem;color:#94a3b8;text-align:center;margin-top:8px;">OTP expires in 15 minutes.</p>
+  </div>
+</div>
+{% endblock %}
