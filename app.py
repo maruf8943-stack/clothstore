@@ -802,12 +802,24 @@ def submit_review(pid):
                     media.append(None)
             while len(media) < 3:
                 media.append(None)
-            c.execute("""INSERT INTO reviews (product_id, user_id, rating, title, body, media_1, media_2, media_3)
-                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-                         ON DUPLICATE KEY UPDATE rating=%s, title=%s, body=%s,
-                         media_1=COALESCE(VALUES(media_1), media_1),
-                         media_2=COALESCE(VALUES(media_2), media_2),
-                         media_3=COALESCE(VALUES(media_3), media_3)""",
+          if USE_POSTGRES:
+    c.execute("""INSERT INTO reviews (product_id, user_id, rating, title, body, media_1, media_2, media_3)
+                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+                 ON CONFLICT (product_id, user_id) DO UPDATE SET
+                 rating=EXCLUDED.rating, title=EXCLUDED.title, body=EXCLUDED.body,
+                 media_1=COALESCE(EXCLUDED.media_1, reviews.media_1),
+                 media_2=COALESCE(EXCLUDED.media_2, reviews.media_2),
+                 media_3=COALESCE(EXCLUDED.media_3, reviews.media_3)""",
+                 (pid, session['user_id'], rating, title, body, media[0], media[1], media[2]))
+else:
+    c.execute("""INSERT INTO reviews (product_id, user_id, rating, title, body, media_1, media_2, media_3)
+                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+                 ON DUPLICATE KEY UPDATE rating=%s, title=%s, body=%s,
+                 media_1=COALESCE(VALUES(media_1), media_1),
+                 media_2=COALESCE(VALUES(media_2), media_2),
+                 media_3=COALESCE(VALUES(media_3), media_3)""",
+                 (pid, session['user_id'], rating, title, body, media[0], media[1], media[2],
+                  rating, title, body))
                       (pid, session['user_id'], rating, title, body, media[0], media[1], media[2],
                        rating, title, body))
         db.commit()
