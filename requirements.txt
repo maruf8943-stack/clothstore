@@ -5,3 +5,4 @@ python-dotenv==1.0.1
 flask-limiter==3.5.0
 bleach==6.1.0
 Werkzeug==3.0.3
+pymysql==1.1.0
