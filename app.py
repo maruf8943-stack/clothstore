@@ -19,7 +19,7 @@ else:
     import pymysql, pymysql.cursors
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'clothstore_secret_key_v3_2024')
+app.secret_key = os.environ.get('SECRET_KEY', 'clothstore_secret_key_v3_2026')
 
 # ─────────────────────────────────────────────
 # SECURITY SETUP
