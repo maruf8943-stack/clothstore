@@ -49,30 +49,26 @@ def sanitize(text, max_length=500):
     """Strip HTML tags and dangerous characters from user input."""
     if not text:
         return ''
-    # Remove HTML tags
     clean = bleach.clean(str(text), tags=[], strip=True)
-    # Remove SQL injection patterns
     sql_patterns = [
         r"(--|;|/\*|\*/)",
-        r"(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)",
+        r"(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)",
     ]
     for pattern in sql_patterns:
         clean = re.sub(pattern, '', clean, flags=re.IGNORECASE)
     return clean[:max_length].strip()
 
 def sanitize_email(email):
-    """Validate and sanitize email address."""
     email = str(email).strip().lower()[:150]
     if not re.match(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$', email):
         return None
     return email
 
 def sanitize_phone(phone):
-    """Only allow digits and + for phone numbers."""
     return re.sub(r'[^\d+\-\s]', '', str(phone))[:20]
 
 # ── 4. Brute Force Tracker ─────────────────────
-login_attempts = {}  # ip -> {'count': n, 'blocked_until': timestamp}
+login_attempts = {}
 
 def is_ip_blocked(ip):
     data = login_attempts.get(ip, {})
@@ -87,7 +83,6 @@ def record_failed_login(ip):
         login_attempts[ip] = {'count': 0, 'blocked_until': 0}
     login_attempts[ip]['count'] += 1
     if login_attempts[ip]['count'] >= 5:
-        # Block for 15 minutes after 5 failed attempts
         login_attempts[ip]['blocked_until'] = time.time() + 900
         login_attempts[ip]['count'] = 0
 
@@ -95,8 +90,6 @@ def reset_login_attempts(ip):
     if ip in login_attempts:
         del login_attempts[ip]
 
-# On Render, use /tmp for uploads (static dir may not be writable)
-# For permanent uploads, use Cloudinary or AWS S3
 UPLOAD_FOLDER      = os.environ.get('UPLOAD_FOLDER', os.path.join(os.path.dirname(__file__), 'static', 'uploads'))
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 app.config['UPLOAD_FOLDER']      = UPLOAD_FOLDER
@@ -104,13 +97,11 @@ app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
 
 def get_db():
     if USE_POSTGRES:
-        # Render PostgreSQL
         url = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
         conn = psycopg2.connect(url, cursor_factory=psycopg2.extras.RealDictCursor)
         conn.autocommit = False
         return conn
     else:
-        # Local MySQL
         return pymysql.connect(
             host='localhost', port=3306,
             user='root',
@@ -184,6 +175,21 @@ def get_unread_chat_count():
     finally:
         db.close()
 
+def upsert_setting(c, key, val):
+    """Insert or update a site_settings row — works for both PostgreSQL and MySQL."""
+    if USE_POSTGRES:
+        c.execute(
+            "INSERT INTO site_settings (setting_key,setting_value) VALUES (%s,%s) "
+            "ON CONFLICT (setting_key) DO UPDATE SET setting_value=EXCLUDED.setting_value",
+            (key, val)
+        )
+    else:
+        c.execute(
+            "INSERT INTO site_settings (setting_key,setting_value) VALUES (%s,%s) "
+            "ON DUPLICATE KEY UPDATE setting_value=%s",
+            (key, val, val)
+        )
+
 @app.context_processor
 def inject_globals():
     s = get_all_settings()
@@ -250,7 +256,6 @@ def product_detail(pid):
             can_review = False
             user_review = None
             if session.get('user_id') and not session.get('is_admin'):
-                # Allow review if user has any order containing this product (any status except cancelled)
                 c.execute("""SELECT oi.id FROM order_items oi
                              JOIN orders o ON oi.order_id=o.id
                              WHERE o.user_id=%s AND oi.product_id=%s
@@ -273,18 +278,15 @@ def product_detail(pid):
 def login():
     if request.method == 'POST':
         ip    = get_remote_address()
-        # Check brute force block
         blocked, remaining = is_ip_blocked(ip)
         if blocked:
             flash(f'Too many failed attempts. Try again in {remaining//60}m {remaining%60}s.', 'error')
             return render_template('login.html', cart_count=0)
-
         ident = sanitize(request.form.get('identifier', '').strip(), 150)
         pw    = hash_password(request.form.get('password', ''))
         db = get_db()
         try:
             with db.cursor() as c:
-                # Parameterized query — safe from SQL injection
                 c.execute("SELECT * FROM users WHERE (email=%s OR phone=%s) AND password=%s",
                           (ident, ident, pw))
                 user = c.fetchone()
@@ -298,7 +300,6 @@ def login():
             session.update(user_id=user['id'], username=user['name'], is_admin=user['is_admin'])
             flash('Welcome back, ' + user['name'] + '!', 'success')
             return redirect(url_for('admin_dashboard') if user['is_admin'] else url_for('index'))
-        # Failed — record attempt
         record_failed_login(ip)
         attempts = login_attempts.get(ip, {}).get('count', 0)
         remaining_tries = max(0, 5 - attempts)
@@ -313,14 +314,12 @@ def register():
         email = sanitize_email(request.form.get('email', ''))
         phone = sanitize_phone(request.form.get('phone', ''))
         pw    = request.form.get('password', '')
-
         if not name:
             flash('Invalid name.', 'error'); return render_template('register.html', cart_count=0)
         if not email:
             flash('Invalid email address.', 'error'); return render_template('register.html', cart_count=0)
         if len(pw) < 6:
             flash('Password must be at least 6 characters.', 'error'); return render_template('register.html', cart_count=0)
-
         pw_hash = hash_password(pw)
         db = get_db()
         try:
@@ -563,7 +562,6 @@ def checkout():
     if request.method == 'GET':
         return redirect(url_for('cart'))
 
-    # ── POST: place the order ──
     payment_method  = request.form.get('payment_method', 'cod')
     voucher_id      = request.form.get('voucher_id', type=int)
     discount_amount = request.form.get('discount_amount', 0.0, type=float)
@@ -580,7 +578,6 @@ def checkout():
 
     db = get_db()
     try:
-        # If selected_items were passed use them, otherwise use entire cart
         if selected_ids:
             fmt = ','.join(['%s'] * len(selected_ids))
             with db.cursor() as c:
@@ -591,7 +588,6 @@ def checkout():
                           (*selected_ids, session['user_id']))
                 items = c.fetchall()
         else:
-            # Fallback: use all cart items
             with db.cursor() as c:
                 c.execute("""SELECT c.id AS cart_id, c.quantity, c.size,
                               p.id AS product_id, p.price
@@ -613,7 +609,11 @@ def checkout():
                 VALUES (%s,%s,%s,%s,%s,%s,%s)""",
                 (session['user_id'], name, phone, full_address,
                  final_total, discount_amount, payment_method))
-            oid = c.lastrowid
+            if USE_POSTGRES:
+                c.execute("SELECT lastval()")
+                oid = c.fetchone()['lastval']
+            else:
+                oid = c.lastrowid
 
             for item in items:
                 c.execute("INSERT INTO order_items (order_id,product_id,quantity,size,price) VALUES (%s,%s,%s,%s,%s)",
@@ -622,7 +622,6 @@ def checkout():
             if voucher_id:
                 c.execute("UPDATE vouchers SET used_count=used_count+1 WHERE id=%s", (voucher_id,))
 
-            # Remove ordered items from cart
             if selected_ids:
                 for cid in selected_ids:
                     c.execute("DELETE FROM cart WHERE id=%s AND user_id=%s", (cid, session['user_id']))
@@ -671,7 +670,6 @@ def order_tracking(oid):
                          FROM order_items oi JOIN products p ON oi.product_id=p.id
                          WHERE oi.order_id=%s""", (oid,))
             items = c.fetchall()
-            # Load existing reviews for each product in this order
             reviews_map = {}
             if order['status'] == 'delivered':
                 for item in items:
@@ -752,8 +750,7 @@ def user_profile():
         db.commit()
     finally:
         db.close()
-    stats = {'total_orders': total_orders, 'total_spent': float(total_spent),
-             **status_counts}
+    stats = {'total_orders': total_orders, 'total_spent': float(total_spent), **status_counts}
     return render_template('profile.html', user=user, stats=stats, all_orders=all_orders,
                            recent_orders=recent_orders, chat_messages=chat_messages,
                            active_tab=active_tab, order_status=order_status,
@@ -766,9 +763,9 @@ def user_profile():
 def submit_review(pid):
     if session.get('is_admin'):
         return redirect(url_for('product_detail', pid=pid))
-    rating = request.form.get('rating', type=int)
-    title  = sanitize(request.form.get('title', ''), 200)
-    body   = sanitize(request.form.get('body', ''), 1000)
+    rating   = request.form.get('rating', type=int)
+    title    = sanitize(request.form.get('title', ''), 200)
+    body     = sanitize(request.form.get('body', ''), 1000)
     next_url = request.form.get('next', url_for('product_detail', pid=pid))
     if not rating or not 1 <= rating <= 5:
         flash('Please select a star rating.', 'error')
@@ -783,7 +780,7 @@ def submit_review(pid):
             if not c.fetchone():
                 flash('You can only review products after delivery.', 'error')
                 return redirect(next_url)
-            # Handle media uploads (photos/videos)
+
             media = []
             for field in ['media_1', 'media_2', 'media_3']:
                 f = request.files.get(field)
@@ -802,26 +799,25 @@ def submit_review(pid):
                     media.append(None)
             while len(media) < 3:
                 media.append(None)
-          if USE_POSTGRES:
-    c.execute("""INSERT INTO reviews (product_id, user_id, rating, title, body, media_1, media_2, media_3)
-                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-                 ON CONFLICT (product_id, user_id) DO UPDATE SET
-                 rating=EXCLUDED.rating, title=EXCLUDED.title, body=EXCLUDED.body,
-                 media_1=COALESCE(EXCLUDED.media_1, reviews.media_1),
-                 media_2=COALESCE(EXCLUDED.media_2, reviews.media_2),
-                 media_3=COALESCE(EXCLUDED.media_3, reviews.media_3)""",
-                 (pid, session['user_id'], rating, title, body, media[0], media[1], media[2]))
-else:
-    c.execute("""INSERT INTO reviews (product_id, user_id, rating, title, body, media_1, media_2, media_3)
-                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-                 ON DUPLICATE KEY UPDATE rating=%s, title=%s, body=%s,
-                 media_1=COALESCE(VALUES(media_1), media_1),
-                 media_2=COALESCE(VALUES(media_2), media_2),
-                 media_3=COALESCE(VALUES(media_3), media_3)""",
-                 (pid, session['user_id'], rating, title, body, media[0], media[1], media[2],
-                  rating, title, body))
-                      (pid, session['user_id'], rating, title, body, media[0], media[1], media[2],
-                       rating, title, body))
+
+            if USE_POSTGRES:
+                c.execute("""INSERT INTO reviews (product_id, user_id, rating, title, body, media_1, media_2, media_3)
+                             VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+                             ON CONFLICT (product_id, user_id) DO UPDATE SET
+                             rating=EXCLUDED.rating, title=EXCLUDED.title, body=EXCLUDED.body,
+                             media_1=COALESCE(EXCLUDED.media_1, reviews.media_1),
+                             media_2=COALESCE(EXCLUDED.media_2, reviews.media_2),
+                             media_3=COALESCE(EXCLUDED.media_3, reviews.media_3)""",
+                           (pid, session['user_id'], rating, title, body, media[0], media[1], media[2]))
+            else:
+                c.execute("""INSERT INTO reviews (product_id, user_id, rating, title, body, media_1, media_2, media_3)
+                             VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+                             ON DUPLICATE KEY UPDATE rating=%s, title=%s, body=%s,
+                             media_1=COALESCE(VALUES(media_1), media_1),
+                             media_2=COALESCE(VALUES(media_2), media_2),
+                             media_3=COALESCE(VALUES(media_3), media_3)""",
+                           (pid, session['user_id'], rating, title, body, media[0], media[1], media[2],
+                            rating, title, body))
         db.commit()
         flash('Review submitted! Thank you. 🌟', 'success')
     except Exception as e:
@@ -912,7 +908,7 @@ def admin_products():
             if search:   q += " AND name LIKE %s";  p.append(f'%{search}%')
             if category: q += " AND category=%s";   p.append(category)
             if gender:   q += " AND gender=%s";     p.append(gender)
-            if stock_f == 'out':  q += " AND stock=0"
+            if stock_f == 'out':   q += " AND stock=0"
             elif stock_f == 'low': q += " AND stock>0 AND stock<=5"
             if flag == 'featured': q += " AND is_featured=1"
             elif flag == 'new':    q += " AND is_new=1"
@@ -1213,7 +1209,7 @@ def admin_banners():
                             'feature_badge_1','feature_badge_2','feature_badge_3',
                             'bkash_number','nagad_number','rocket_number','payment_instructions']:
                     val = request.form.get(key, '').strip()
-                    c.execute("INSERT INTO site_settings (setting_key,setting_value) VALUES (%s,%s) ON DUPLICATE KEY UPDATE setting_value=%s", (key, val, val))
+                    upsert_setting(c, key, val)
             db.commit()
         finally:
             db.close()
@@ -1232,7 +1228,7 @@ def admin_homepage():
                 for i in range(1, 3): keys += [f'promo_{i}_title', f'promo_{i}_text', f'promo_{i}_btn', f'promo_{i}_url', f'promo_{i}_img']
                 for key in keys:
                     val = request.form.get(key, '').strip()
-                    c.execute("INSERT INTO site_settings (setting_key,setting_value) VALUES (%s,%s) ON DUPLICATE KEY UPDATE setting_value=%s", (key, val, val))
+                    upsert_setting(c, key, val)
             db.commit()
         finally:
             db.close()
@@ -1248,7 +1244,7 @@ def admin_reviews():
         with db.cursor() as c:
             q = """SELECT r.*,u.name AS user_name,p.name AS product_name,p.image AS product_image
                    FROM reviews r JOIN users u ON r.user_id=u.id JOIN products p ON r.product_id=p.id WHERE 1=1"""
-            if status == 'pending':  q += " AND r.is_approved=0"
+            if status == 'pending':    q += " AND r.is_approved=0"
             elif status == 'approved': q += " AND r.is_approved=1"
             q += " ORDER BY r.id DESC"; c.execute(q); reviews = c.fetchall()
     finally:
@@ -1344,17 +1340,22 @@ def admin_settings():
                 with db.cursor() as c:
                     c.execute("SELECT id FROM users WHERE id=%s AND password=%s", (session['user_id'], old))
                     if c.fetchone():
-                        c.execute("UPDATE users SET password=%s WHERE id=%s", (new, session['user_id'])); db.commit(); flash('Password changed!', 'success')
-                    else: flash('Incorrect password.', 'error')
-            finally: db.close()
+                        c.execute("UPDATE users SET password=%s WHERE id=%s", (new, session['user_id']))
+                        db.commit(); flash('Password changed!', 'success')
+                    else:
+                        flash('Incorrect password.', 'error')
+            finally:
+                db.close()
         elif action == 'change_name':
             name = request.form.get('name', '').strip()
             if name:
                 db = get_db()
                 try:
-                    with db.cursor() as c: c.execute("UPDATE users SET name=%s WHERE id=%s", (name, session['user_id']))
+                    with db.cursor() as c:
+                        c.execute("UPDATE users SET name=%s WHERE id=%s", (name, session['user_id']))
                     db.commit(); session['username'] = name; flash('Name updated!', 'success')
-                finally: db.close()
+                finally:
+                    db.close()
         return redirect(url_for('admin_settings'))
     return render_template('admin/settings.html')
 
