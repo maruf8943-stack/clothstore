@@ -1,123 +1,284 @@
 {% extends 'base.html' %}
 {% block title %}Track Order #{{ order.id }} — ClothStore{% endblock %}
 {% block content %}
-<div class="container" style="padding:40px 20px;max-width:800px;">
-  <a href="{{ url_for('my_orders') }}" style="font-size:.83rem;color:#e11d48;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:20px;">
+<div class="container" style="padding:40px 20px;max-width:820px;">
+
+  <a href="{{ url_for('my_orders') }}"
+     style="font-size:.83rem;color:#e11d48;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:20px;">
     ← Back to My Orders
   </a>
 
-  <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden;margin-bottom:20px;">
+  <!-- Order Header -->
+  <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden;margin-bottom:16px;">
     <div style="padding:20px 24px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
       <div>
-        <h2 style="font-size:1.15rem;font-weight:800;">Order #{{ order.id }}</h2>
-        <p style="font-size:.82rem;color:#94a3b8;margin-top:2px;">Placed on {{ order.created_at.strftime('%d %B %Y at %I:%M %p') if order.created_at else 'N/A' }}</p>
+        <h2 style="font-size:1.1rem;font-weight:800;">Order #{{ order.id }}</h2>
+        <p style="font-size:.8rem;color:#94a3b8;margin-top:2px;">
+          Placed on {{ order.created_at.strftime('%d %B %Y at %I:%M %p') if order.created_at else 'N/A' }}
+        </p>
       </div>
-      <span class="track-status status-{{ order.status }}">{{ order.status|upper }}</span>
+      <span style="padding:5px 16px;border-radius:20px;font-size:.75rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+                   {% if order.status=='delivered' %}background:#dcfce7;color:#166534;
+                   {% elif order.status=='shipped' %}background:#e0f2fe;color:#075985;
+                   {% elif order.status=='processing' %}background:#dbeafe;color:#1e40af;
+                   {% elif order.status=='cancelled' %}background:#fee2e2;color:#991b1b;
+                   {% else %}background:#fef3c7;color:#92400e;{% endif %}">
+        {{ order.status|upper }}
+      </span>
     </div>
 
     <!-- Status Stepper -->
-    <div style="padding:24px;">
-      {% set steps = [('pending','Order Placed','🛒'),('processing','Processing','⚙️'),('shipped','Shipped','🚚'),('delivered','Delivered','✅')] %}
-      {% set status_order = {'pending':0,'processing':1,'shipped':2,'delivered':3,'cancelled':-1} %}
-      {% set current_idx = status_order.get(order.status, 0) %}
-
+    <div style="padding:28px 24px;">
       {% if order.status == 'cancelled' %}
-      <div style="text-align:center;padding:20px;color:#dc2626;font-weight:700;font-size:1rem;">
-        ❌ This order has been cancelled.
-      </div>
+      <div style="text-align:center;padding:16px;color:#dc2626;font-weight:700;">❌ This order has been cancelled.</div>
       {% else %}
-      <div class="stepper">
-        {% for s_key, s_label, s_icon in steps %}
-        {% set s_idx = loop.index0 %}
-        <div class="step {% if s_idx < current_idx %}done{% elif s_idx == current_idx %}active{% endif %}">
-          <div class="step-circle">{{ s_icon if s_idx <= current_idx else '' }}</div>
-          <div class="step-label">{{ s_label }}</div>
+      {% set steps = [('pending','Order Placed','🛒'),('processing','Processing','⚙️'),('shipped','Shipped','🚚'),('delivered','Delivered','✅')] %}
+      {% set smap = {'pending':0,'processing':1,'shipped':2,'delivered':3} %}
+      {% set cidx = smap.get(order.status, 0) %}
+      <div style="display:flex;align-items:center;">
+        {% for skey, slabel, sicon in steps %}
+        {% set sidx = loop.index0 %}
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;min-width:80px;">
+          <div style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+                      {% if sidx < cidx %}background:#dcfce7;border:2px solid #16a34a;
+                      {% elif sidx == cidx %}background:#e11d48;border:2px solid #e11d48;color:#fff;box-shadow:0 0 0 4px rgba(225,29,72,.15);
+                      {% else %}background:#f1f5f9;border:2px solid #e2e8f0;{% endif %}">
+            {{ sicon }}
+          </div>
+          <span style="font-size:.7rem;font-weight:600;text-align:center;color:{% if sidx <= cidx %}#1e293b{% else %}#94a3b8{% endif %};">{{ slabel }}</span>
         </div>
-        {% if not loop.last %}<div class="step-line {% if s_idx < current_idx %}done{% endif %}"></div>{% endif %}
+        {% if not loop.last %}
+        <div style="flex:1;height:2px;margin-bottom:20px;background:{% if sidx < cidx %}#16a34a{% else %}#e2e8f0{% endif %};"></div>
+        {% endif %}
         {% endfor %}
       </div>
       {% endif %}
 
-      <!-- Tracking Note from Admin -->
       {% if order.tracking_note %}
-      <div style="margin-top:20px;background:#eff6ff;border-radius:10px;padding:14px 18px;border-left:4px solid #3b82f6;">
-        <p style="font-size:.78rem;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">📍 Latest Update from Store</p>
-        <p style="font-size:.88rem;color:#1e40af;">{{ order.tracking_note }}</p>
-      </div>
-      {% endif %}
-
-      <!-- Admin Note -->
-      {% if order.admin_note %}
-      <div style="margin-top:14px;background:#fefce8;border-radius:10px;padding:14px 18px;border-left:4px solid #eab308;">
-        <p style="font-size:.78rem;font-weight:700;color:#854d0e;text-transform:uppercase;margin-bottom:6px;">📝 Note from Store</p>
-        <p style="font-size:.88rem;color:#854d0e;">{{ order.admin_note }}</p>
+      <div style="margin-top:16px;background:#eff6ff;border-radius:10px;padding:12px 16px;border-left:4px solid #3b82f6;font-size:.85rem;color:#1e40af;">
+        📍 <strong>Update:</strong> {{ order.tracking_note }}
       </div>
       {% endif %}
     </div>
   </div>
 
-  <!-- Order Info -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+  <!-- Delivery & Payment -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
     <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px;">
-      <h4 style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:10px;">Delivery Address</h4>
-      <p style="font-size:.88rem;font-weight:600;">{{ order.name }}</p>
-      <p style="font-size:.83rem;color:#64748b;">📱 {{ order.phone }}</p>
-      <p style="font-size:.83rem;color:#64748b;margin-top:4px;">{{ order.address }}</p>
+      <h4 style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin-bottom:10px;">Delivery Address</h4>
+      <p style="font-weight:700;font-size:.9rem;">{{ order.name }}</p>
+      <p style="font-size:.82rem;color:#64748b;margin-top:3px;">📱 {{ order.phone }}</p>
+      <p style="font-size:.82rem;color:#64748b;margin-top:3px;">{{ order.address }}</p>
     </div>
     <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px;">
-      <h4 style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:10px;">Payment Summary</h4>
-      <div style="display:flex;justify-content:space-between;font-size:.83rem;padding:4px 0;color:#64748b;">
-        <span>Payment Method</span><strong>{{ (order.payment_method or 'cod')|upper }}</strong>
+      <h4 style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin-bottom:10px;">Payment Summary</h4>
+      <div style="display:flex;justify-content:space-between;font-size:.83rem;padding:4px 0;">
+        <span style="color:#64748b;">Method</span><strong>{{ (order.payment_method or 'COD')|upper }}</strong>
       </div>
       {% if order.discount_amount and order.discount_amount > 0 %}
       <div style="display:flex;justify-content:space-between;font-size:.83rem;padding:4px 0;color:#16a34a;">
-        <span>Discount Applied</span><strong>-৳{{ "%.0f"|format(order.discount_amount) }}</strong>
+        <span>Discount</span><strong>-৳{{ "%.0f"|format(order.discount_amount) }}</strong>
       </div>
       {% endif %}
-      <div style="display:flex;justify-content:space-between;font-size:1rem;padding:8px 0 0;font-weight:800;border-top:1.5px solid #e2e8f0;margin-top:6px;">
+      <div style="display:flex;justify-content:space-between;font-size:1rem;font-weight:800;border-top:1.5px solid #e2e8f0;margin-top:8px;padding-top:8px;">
         <span>Total</span><span style="color:#e11d48;">৳{{ "%.0f"|format(order.total) }}</span>
       </div>
     </div>
   </div>
 
-  <!-- Items -->
-  <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+  <!-- Order Items -->
+  <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:16px;">
     <div style="padding:14px 20px;border-bottom:1px solid #e2e8f0;font-size:.88rem;font-weight:700;">Order Items</div>
     {% for item in items %}
     <div style="display:flex;gap:14px;padding:14px 20px;border-bottom:1px solid #f8fafc;align-items:center;">
       {% if item.image %}
-      <img src="{{ item.image }}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;">
+      <img src="{{ item.image }}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;flex-shrink:0;"
+           onerror="this.style.display='none'">
       {% endif %}
       <div style="flex:1;">
-        <p style="font-weight:600;font-size:.88rem;">{{ item.product_name }}</p>
-        <p style="font-size:.78rem;color:#94a3b8;">Size: {{ item.size }} &nbsp;×&nbsp; {{ item.quantity }}</p>
+        <a href="{{ url_for('product_detail', pid=item.product_id) }}"
+           style="font-weight:700;font-size:.88rem;color:#1e293b;text-decoration:none;">{{ item.product_name }}</a>
+        <p style="font-size:.78rem;color:#94a3b8;margin-top:2px;">Size: {{ item.size }} × {{ item.quantity }}</p>
       </div>
-      <strong style="font-size:.9rem;">৳{{ "%.0f"|format(item.price * item.quantity) }}</strong>
+      <strong style="font-size:.9rem;color:#e11d48;">৳{{ "%.0f"|format(item.price * item.quantity) }}</strong>
     </div>
     {% endfor %}
   </div>
 
-  <div style="text-align:center;margin-top:24px;">
-    <a href="{{ url_for('user_chat') }}" class="btn btn-outline">💬 Chat with Support</a>
+  <!-- ══ REVIEW SECTION (only if delivered) ══════════════════ -->
+  {% if order.status == 'delivered' %}
+  <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden;margin-bottom:16px;">
+    <div style="padding:16px 22px;border-bottom:1px solid #e2e8f0;background:linear-gradient(135deg,#fff5f7,#fff);">
+      <h3 style="font-size:1rem;font-weight:800;color:#1e293b;">⭐ Rate Your Items</h3>
+      <p style="font-size:.8rem;color:#94a3b8;margin-top:3px;">Share your experience to help other shoppers!</p>
+    </div>
+
+    {% for item in items %}
+    {% set existing = reviews_map.get(item.product_id) %}
+    <div style="padding:20px 22px;{% if not loop.last %}border-bottom:1.5px solid #f1f5f9;{% endif %}">
+      <!-- Product header -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        {% if item.image %}
+        <img src="{{ item.image }}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;"
+             onerror="this.style.display='none'">
+        {% endif %}
+        <div>
+          <div style="font-weight:700;font-size:.9rem;">{{ item.product_name }}</div>
+          <div style="font-size:.75rem;color:#94a3b8;">Size: {{ item.size }}</div>
+        </div>
+        {% if existing %}
+        <span style="margin-left:auto;background:#dcfce7;color:#166534;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;">✅ Reviewed</span>
+        {% endif %}
+      </div>
+
+      <form method="post" action="{{ url_for('submit_review', pid=item.product_id) }}"
+            enctype="multipart/form-data" id="reviewForm_{{ item.product_id }}">
+        <input type="hidden" name="next" value="{{ url_for('order_tracking', oid=order.id) }}">
+
+        <!-- Star picker -->
+        <div style="margin-bottom:14px;">
+          <label style="font-size:.78rem;font-weight:700;color:#475569;display:block;margin-bottom:8px;">YOUR RATING *</label>
+          <div style="display:flex;gap:4px;" id="stars_{{ item.product_id }}">
+            {% for i in range(1,6) %}
+            <span data-val="{{ i }}"
+                  onclick="setStar({{ item.product_id }}, {{ i }})"
+                  onmouseover="hoverStar({{ item.product_id }}, {{ i }})"
+                  onmouseout="unhoverStar({{ item.product_id }})"
+                  style="font-size:2rem;cursor:pointer;line-height:1;user-select:none;transition:color .1s;
+                         color:{% if existing and i<=existing.rating %}#f59e0b{% else %}#d1d5db{% endif %};">★</span>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="rating" id="rating_{{ item.product_id }}"
+                 value="{{ existing.rating if existing else '' }}" required>
+          <p id="starErr_{{ item.product_id }}" style="color:#e11d48;font-size:.73rem;margin-top:4px;display:none;">Please select a rating</p>
+        </div>
+
+        <!-- Title -->
+        <div style="margin-bottom:10px;">
+          <label style="font-size:.78rem;font-weight:700;color:#475569;display:block;margin-bottom:5px;">TITLE</label>
+          <input type="text" name="title" placeholder="e.g. Amazing quality!"
+                 value="{{ existing.title if existing else '' }}"
+                 style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.85rem;outline:none;box-sizing:border-box;"
+                 onfocus="this.style.borderColor='#e11d48'" onblur="this.style.borderColor='#e2e8f0'">
+        </div>
+
+        <!-- Body -->
+        <div style="margin-bottom:14px;">
+          <label style="font-size:.78rem;font-weight:700;color:#475569;display:block;margin-bottom:5px;">YOUR REVIEW</label>
+          <textarea name="body" rows="3" placeholder="Tell others what you think about this product..."
+                    style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.85rem;resize:none;outline:none;box-sizing:border-box;"
+                    onfocus="this.style.borderColor='#e11d48'" onblur="this.style.borderColor='#e2e8f0'">{{ existing.body if existing else '' }}</textarea>
+        </div>
+
+        <!-- Photo / Video upload -->
+        <div style="margin-bottom:16px;">
+          <label style="font-size:.78rem;font-weight:700;color:#475569;display:block;margin-bottom:8px;">PHOTOS / VIDEOS (up to 3)</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            {% for idx in [1,2,3] %}
+            <label id="uploadLabel_{{ item.product_id }}_{{ idx }}"
+                   style="width:90px;height:90px;border:2px dashed #e2e8f0;border-radius:10px;cursor:pointer;
+                          display:flex;flex-direction:column;align-items:center;justify-content:center;
+                          background:#f8fafc;transition:border-color .15s;overflow:hidden;position:relative;"
+                   onmouseover="this.style.borderColor='#e11d48'" onmouseout="this.style.borderColor='#e2e8f0'">
+              {% if existing and existing['media_' ~ idx] %}
+              <img src="{{ existing['media_' ~ idx] }}" id="preview_{{ item.product_id }}_{{ idx }}"
+                   style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+              {% else %}
+              <div id="preview_{{ item.product_id }}_{{ idx }}"
+                   style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
+                <svg width="22" height="22" fill="none" stroke="#94a3b8" stroke-width="1.5" viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span style="font-size:.65rem;color:#94a3b8;">Photo/Video</span>
+              </div>
+              {% endif %}
+              <input type="file" name="media_{{ idx }}" accept="image/*,video/*" style="display:none;"
+                     onchange="previewMedia(this, '{{ item.product_id }}_{{ idx }}')">
+            </label>
+            {% endfor %}
+          </div>
+          <p style="font-size:.72rem;color:#94a3b8;margin-top:6px;">JPG, PNG, GIF, MP4, MOV supported · Max 5MB each</p>
+        </div>
+
+        <button type="submit" onclick="return validateStar({{ item.product_id }})"
+                style="padding:10px 24px;background:#e11d48;color:#fff;border:none;border-radius:8px;
+                       font-weight:700;font-size:.88rem;cursor:pointer;transition:background .15s;"
+                onmouseover="this.style.background='#be123c'" onmouseout="this.style.background='#e11d48'">
+          {% if existing %}Update Review{% else %}Submit Review{% endif %}
+        </button>
+      </form>
+    </div>
+    {% endfor %}
   </div>
+  {% endif %}
+
+  <div style="text-align:center;margin-top:8px;">
+    <a href="{{ url_for('user_chat') }}"
+       style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border:1.5px solid #e2e8f0;
+              border-radius:8px;font-size:.85rem;font-weight:600;color:#475569;text-decoration:none;transition:all .15s;"
+       onmouseover="this.style.borderColor='#e11d48';this.style.color='#e11d48'"
+       onmouseout="this.style.borderColor='#e2e8f0';this.style.color='#475569'">
+      💬 Chat with Support
+    </a>
+  </div>
+
 </div>
 
-<style>
-.track-status{padding:5px 14px;border-radius:20px;font-size:.75rem;font-weight:800;letter-spacing:.05em;}
-.status-pending{background:#fef3c7;color:#92400e;}
-.status-processing{background:#dbeafe;color:#1e40af;}
-.status-shipped{background:#e0f2fe;color:#075985;}
-.status-delivered{background:#dcfce7;color:#166534;}
-.status-cancelled{background:#fee2e2;color:#991b1b;}
+<script>
+// star ratings per product
+const ratings = {};
 
-.stepper{display:flex;align-items:center;padding:10px 0;}
-.step{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:70px;}
-.step-circle{width:40px;height:40px;border-radius:50%;background:#f1f5f9;border:2px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#94a3b8;transition:all .3s;}
-.step.done .step-circle{background:#dcfce7;border-color:#16a34a;color:#16a34a;}
-.step.active .step-circle{background:#e11d48;border-color:#e11d48;color:#fff;font-size:.9rem;box-shadow:0 0 0 4px rgba(225,29,72,.15);}
-.step-label{font-size:.72rem;font-weight:600;color:#94a3b8;text-align:center;}
-.step.done .step-label,.step.active .step-label{color:#1e293b;}
-.step-line{flex:1;height:2px;background:#e2e8f0;margin-bottom:20px;}
-.step-line.done{background:#16a34a;}
-</style>
+function renderStars(pid, n) {
+  document.querySelectorAll('#stars_' + pid + ' span').forEach((s, i) => {
+    s.style.color = i < n ? '#f59e0b' : '#d1d5db';
+  });
+}
+
+function setStar(pid, n) {
+  ratings[pid] = n;
+  document.getElementById('rating_' + pid).value = n;
+  document.getElementById('starErr_' + pid).style.display = 'none';
+  renderStars(pid, n);
+}
+
+function hoverStar(pid, n) { renderStars(pid, n); }
+function unhoverStar(pid)   { renderStars(pid, ratings[pid] || 0); }
+
+function validateStar(pid) {
+  const val = document.getElementById('rating_' + pid).value;
+  if (!val) {
+    document.getElementById('starErr_' + pid).style.display = 'block';
+    return false;
+  }
+  return true;
+}
+
+function previewMedia(input, key) {
+  const prev = document.getElementById('preview_' + key);
+  if (!input.files || !input.files[0]) return;
+  const file  = input.files[0];
+  const isVid = file.type.startsWith('video/');
+  const url   = URL.createObjectURL(file);
+  if (isVid) {
+    prev.innerHTML = `<video src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" muted playsinline></video>`;
+  } else {
+    prev.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`;
+  }
+  // Update label style
+  const label = input.closest('label');
+  if (label) label.style.borderStyle = 'solid';
+}
+
+// Init existing ratings
+{% for item in items %}
+{% if reviews_map.get(item.product_id) %}
+ratings[{{ item.product_id }}] = {{ reviews_map[item.product_id].rating }};
+renderStars({{ item.product_id }}, {{ reviews_map[item.product_id].rating }});
+{% else %}
+ratings[{{ item.product_id }}] = 0;
+{% endif %}
+{% endfor %}
+</script>
 {% endblock %}

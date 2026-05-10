@@ -1,0 +1,69 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Reviews{% endblock %}
+{% block page_title %}⭐ Product Reviews{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-header">
+    <h3>All Reviews ({{ reviews|length }})</h3>
+    <div style="display:flex;gap:8px;">
+      <a href="?status=pending" class="btn btn-sm {% if status=='pending' %}btn-primary{% else %}btn-outline{% endif %}">⏳ Pending</a>
+      <a href="?status=approved" class="btn btn-sm {% if status=='approved' %}btn-primary{% else %}btn-outline{% endif %}">✅ Approved</a>
+      <a href="{{ url_for('admin_reviews') }}" class="btn btn-sm btn-outline">All</a>
+    </div>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="admin-table">
+      <thead>
+        <tr><th>Product</th><th>Customer</th><th>Rating</th><th>Review</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for r in reviews %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              {% if r.product_image %}<img src="{{ r.product_image }}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;">{% endif %}
+              <span style="font-size:.82rem;font-weight:600;">{{ r.product_name }}</span>
+            </div>
+          </td>
+          <td style="font-size:.82rem;">{{ r.user_name }}</td>
+          <td>
+            <div style="display:flex;gap:1px;">
+              {% for i in range(1,6) %}
+              <span style="color:{% if i<=r.rating %}#f59e0b{% else %}#e2e8f0{% endif %};">★</span>
+              {% endfor %}
+            </div>
+          </td>
+          <td style="max-width:260px;">
+            {% if r.title %}<div style="font-weight:600;font-size:.82rem;margin-bottom:2px;">{{ r.title }}</div>{% endif %}
+            <div style="font-size:.78rem;color:#64748b;line-height:1.4;">{{ r.body[:120] }}{% if r.body|length > 120 %}…{% endif %}</div>
+          </td>
+          <td style="font-size:.78rem;color:var(--muted);">{{ r.created_at.strftime('%d %b %Y') if r.created_at else '' }}</td>
+          <td>
+            {% if r.is_approved %}
+            <span class="badge badge-green">Approved</span>
+            {% else %}
+            <span class="badge badge-amber">Pending</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <form method="post" action="{{ url_for('admin_toggle_review', rid=r.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-xs {% if r.is_approved %}btn-warning{% else %}btn-success{% endif %}">
+                  {{ '🚫 Hide' if r.is_approved else '✅ Approve' }}
+                </button>
+              </form>
+              <form method="post" action="{{ url_for('admin_delete_review', rid=r.id) }}" style="display:inline;" onsubmit="return confirm('Delete this review?')">
+                <button type="submit" class="btn btn-xs btn-danger">🗑 Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7"><div class="empty"><p>No reviews found.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

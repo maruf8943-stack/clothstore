@@ -1,200 +1,158 @@
 {% extends 'base.html' %}
 {% block title %}Checkout — ClothStore{% endblock %}
 {% block content %}
-<div class="container" style="padding:40px 20px;max-width:1000px;">
-  <h1 class="page-title">Checkout</h1>
+<div style="background:#f8fafc;min-height:80vh;padding:36px 0 60px;">
+<div class="container" style="max-width:1020px;">
+  <h1 style="font-size:1.3rem;font-weight:800;margin-bottom:24px;">✅ Checkout</h1>
 
-  <div style="display:grid;grid-template-columns:1fr 380px;gap:32px;align-items:start;">
+  {% if not items %}
+  <div style="text-align:center;padding:60px;background:#fff;border-radius:16px;">
+    <p style="font-size:1rem;color:#94a3b8;">No items to checkout. <a href="{{ url_for('cart') }}" style="color:#e11d48;">Go back to cart</a></p>
+  </div>
+  {% else %}
 
-    <!-- LEFT: Delivery + Payment -->
-    <form method="post" id="checkoutForm">
-      <input type="hidden" name="voucher_id" id="voucherIdInput">
-      <input type="hidden" name="discount_amount" id="discountAmountInput" value="0">
+  <form method="post" action="/checkout" id="checkoutForm">
+    {% for item in items %}
+    <input type="hidden" name="selected_items" value="{{ item.cart_id }}">
+    {% endfor %}
+    <input type="hidden" name="voucher_id" id="voucherIdInput">
+    <input type="hidden" name="discount_amount" id="discountAmountInput" value="0">
 
-      <!-- Delivery Info -->
-      <div class="checkout-section">
-        <h3>📦 Delivery Information</h3>
-        <div class="form-group">
-          <label>Full Name</label>
-          <input type="text" name="name" required placeholder="Your full name" value="{{ session.username }}">
-        </div>
-        <div class="form-group">
-          <label>Phone Number</label>
-          <input type="tel" name="phone" required placeholder="01xxxxxxxxx">
-        </div>
-        <div class="form-group">
-          <label>Full Address</label>
-          <textarea name="address" required rows="3" placeholder="House, Road, Area, District..."></textarea>
-        </div>
-      </div>
+    <div style="display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start;">
 
-      <!-- Voucher -->
-      <div class="checkout-section">
-        <h3>🎟️ Voucher / Coupon</h3>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="voucherInput" placeholder="Enter voucher code" style="flex:1;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;">
-          <button type="button" onclick="applyVoucher()" class="btn btn-outline" style="white-space:nowrap;">Apply</button>
-        </div>
-        <div id="voucherMsg" style="margin-top:8px;font-size:.82rem;display:none;"></div>
-      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
 
-      <!-- Payment Method -->
-      <div class="checkout-section">
-        <h3>💳 Payment Method</h3>
-
-        <label class="pay-option">
-          <input type="radio" name="payment_method" value="cod" checked onchange="showPay('cod')">
-          <div class="pay-box">
-            <span class="pay-icon">🏠</span>
+        <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:22px;">
+          <h3 style="font-size:.92rem;font-weight:700;margin-bottom:16px;">📦 Delivery Information</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div style="grid-column:1/-1;">
+              <label style="font-size:.78rem;font-weight:700;display:block;margin-bottom:5px;">Full Name</label>
+              <input type="text" name="name" required value="{{ user_name }}"
+                     style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;">
+            </div>
             <div>
-              <strong>Cash on Delivery</strong>
-              <small>Pay when your order arrives</small>
+              <label style="font-size:.78rem;font-weight:700;display:block;margin-bottom:5px;">Phone</label>
+              <input type="tel" name="phone" required value="{{ user_phone }}" placeholder="01xxxxxxxxx"
+                     style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;">
+            </div>
+            <div>
+              <label style="font-size:.78rem;font-weight:700;display:block;margin-bottom:5px;">City / Area</label>
+              <input type="text" name="city" placeholder="Dhaka, Chittagong..."
+                     style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;">
+            </div>
+            <div style="grid-column:1/-1;">
+              <label style="font-size:.78rem;font-weight:700;display:block;margin-bottom:5px;">Full Address</label>
+              <textarea name="address" required rows="2" placeholder="House, Road, Area, District..."
+                        style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;resize:none;"></textarea>
             </div>
           </div>
-        </label>
+        </div>
 
-        <label class="pay-option">
-          <input type="radio" name="payment_method" value="bkash" onchange="showPay('bkash')">
-          <div class="pay-box" style="border-color:#e2136e;">
-            <span class="pay-icon" style="background:#e2136e;color:#fff;">b</span>
-            <div>
-              <strong>bKash</strong>
-              <small>Mobile banking payment</small>
-            </div>
+        <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:22px;">
+          <h3 style="font-size:.92rem;font-weight:700;margin-bottom:14px;">🎟️ Voucher / Coupon</h3>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="voucherInput" placeholder="Enter voucher code"
+                   style="flex:1;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;text-transform:uppercase;">
+            <button type="button" onclick="applyVoucher()"
+                    style="background:#1e293b;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;cursor:pointer;">Apply</button>
           </div>
-        </label>
+          <div id="voucherMsg" style="margin-top:8px;font-size:.82rem;display:none;padding:8px 12px;border-radius:6px;"></div>
+        </div>
 
-        <label class="pay-option">
-          <input type="radio" name="payment_method" value="nagad" onchange="showPay('nagad')">
-          <div class="pay-box" style="border-color:#f6521f;">
-            <span class="pay-icon" style="background:#f6521f;color:#fff;">N</span>
-            <div>
-              <strong>Nagad</strong>
-              <small>Mobile banking payment</small>
-            </div>
+        <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:22px;">
+          <h3 style="font-size:.92rem;font-weight:700;margin-bottom:16px;">💳 Payment Method</h3>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            {% for val, icon, label, sub, color in [('cod','🏠','Cash on Delivery','Pay when your order arrives','#475569'),('bkash','b','bKash','Mobile banking','#e2136e'),('nagad','N','Nagad','Mobile banking','#f6521f'),('rocket','R','Rocket','Mobile banking','#8b1fa9')] %}
+            <label style="cursor:pointer;" onclick="showPay('{{ val }}')">
+              <input type="radio" name="payment_method" value="{{ val }}" {% if val=='cod' %}checked{% endif %} style="display:none;">
+              <div id="paybox_{{ val }}" style="display:flex;align-items:center;gap:14px;padding:12px 16px;
+                   border:2px solid {% if val=='cod' %}#e11d48{% else %}#e2e8f0{% endif %};border-radius:10px;
+                   background:{% if val=='cod' %}#fff5f7{% else %}#fff{% endif %};transition:all .15s;">
+                <span style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+                      font-weight:900;background:{{ color }};color:#fff;flex-shrink:0;font-size:{% if val=='cod' %}1.1rem{% else %}.85rem{% endif %};">{{ icon }}</span>
+                <div><strong style="display:block;font-size:.88rem;">{{ label }}</strong><small style="color:#64748b;font-size:.74rem;">{{ sub }}</small></div>
+              </div>
+            </label>
+            {% endfor %}
           </div>
-        </label>
-
-        <label class="pay-option">
-          <input type="radio" name="payment_method" value="rocket" onchange="showPay('rocket')">
-          <div class="pay-box" style="border-color:#8b1fa9;">
-            <span class="pay-icon" style="background:#8b1fa9;color:#fff;">R</span>
-            <div>
-              <strong>Rocket</strong>
-              <small>Mobile banking payment</small>
-            </div>
-          </div>
-        </label>
-
-        <!-- Mobile payment instructions -->
-        <div id="payInstructions" style="display:none;margin-top:16px;background:#f8fafc;border-radius:10px;padding:16px;border:1.5px solid #e2e8f0;">
-          <p id="payNumber" style="font-size:1rem;font-weight:700;color:#e11d48;margin-bottom:8px;"></p>
-          <p style="font-size:.83rem;color:#64748b;margin-bottom:12px;">{{ settings.get('payment_instructions','Send the total amount and enter TrxID below.') }}</p>
-          <div class="form-group">
-            <label>Transaction ID (TrxID)</label>
-            <input type="text" name="trx_id" id="trxInput" placeholder="e.g. ABC123XYZ">
+          <div id="payInstructions" style="display:none;margin-top:14px;background:#f8fafc;border-radius:10px;padding:16px;border:1.5px solid #e2e8f0;">
+            <p id="payNumber" style="font-size:.95rem;font-weight:800;color:#e11d48;margin-bottom:6px;"></p>
+            <p style="font-size:.8rem;color:#64748b;margin-bottom:12px;">{{ settings.get('payment_instructions','Send the exact total and enter TrxID below.') }}</p>
+            <label style="font-size:.78rem;font-weight:700;display:block;margin-bottom:5px;">Transaction ID (TrxID)</label>
+            <input type="text" name="trx_id" id="trxInput" placeholder="e.g. ABC123XYZ"
+                   style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;">
           </div>
         </div>
+
       </div>
 
-      <button type="submit" class="btn btn-accent" style="width:100%;padding:14px;font-size:1rem;margin-top:8px;">
-        ✅ Place Order
-      </button>
-    </form>
-
-    <!-- RIGHT: Order Summary -->
-    <div class="checkout-summary">
-      <h3>🛒 Order Summary</h3>
-      {% for item in items %}
-      <div class="summary-item">
-        <span class="summary-name">{{ item.name }} <small>×{{ item.quantity }} ({{ item.size }})</small></span>
-        <span>৳{{ "%.0f"|format(item.price * item.quantity) }}</span>
-      </div>
-      {% endfor %}
-      <div class="summary-divider"></div>
-      <div class="summary-row">
-        <span>Subtotal</span>
-        <span id="subtotalDisplay">৳{{ "%.0f"|format(subtotal) }}</span>
-      </div>
-      <div class="summary-row" id="discountRow" style="display:none;color:#16a34a;">
-        <span>Voucher Discount</span>
-        <span id="discountDisplay">-৳0</span>
-      </div>
-      <div class="summary-row summary-total">
-        <span>Total</span>
-        <span id="totalDisplay">৳{{ "%.0f"|format(subtotal) }}</span>
+      <!-- Summary -->
+      <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:20px;position:sticky;top:80px;">
+        <h3 style="font-size:.92rem;font-weight:700;margin-bottom:14px;">🛒 Order Summary</h3>
+        {% for item in items %}
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f8fafc;">
+          <img src="{{ item.image }}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;flex-shrink:0;" onerror="this.style.display='none'">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ item.name }}</div>
+            <div style="font-size:.72rem;color:#94a3b8;">{{ item.size }} × {{ item.quantity }}</div>
+          </div>
+          <strong style="font-size:.85rem;color:#e11d48;flex-shrink:0;">৳{{ "%.0f"|format(item.price * item.quantity) }}</strong>
+        </div>
+        {% endfor %}
+        <div style="padding-top:12px;display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;font-size:.85rem;">
+            <span style="color:#64748b;">Subtotal</span>
+            <span style="font-weight:700;">৳{{ "%.0f"|format(subtotal) }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.85rem;">
+            <span style="color:#64748b;">Delivery</span>
+            <span style="font-weight:700;">{% if subtotal >= 2000 %}<span style="color:#16a34a;">FREE 🎉</span>{% else %}৳80{% endif %}</span>
+          </div>
+          <div id="discountRow" style="display:none;justify-content:space-between;font-size:.85rem;color:#16a34a;">
+            <span>Voucher</span><span id="discountDisplay" style="font-weight:700;">-৳0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:1.05rem;font-weight:800;border-top:1.5px solid #e2e8f0;padding-top:10px;margin-top:4px;">
+            <span>Total</span>
+            <span style="color:#e11d48;" id="totalDisplay">৳{{ "%.0f"|format(subtotal + (0 if subtotal >= 2000 else 80)) }}</span>
+          </div>
+        </div>
+        <button type="submit" style="width:100%;margin-top:18px;padding:14px;background:#e11d48;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:800;cursor:pointer;">
+          ✅ Place Order
+        </button>
+        <p style="text-align:center;font-size:.72rem;color:#94a3b8;margin-top:8px;">🔒 {{ items|length }} item{% if items|length!=1 %}s{% endif %} selected</p>
       </div>
     </div>
-  </div>
-</div>
-
-<style>
-.checkout-section{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:16px;}
-.checkout-section h3{font-size:.95rem;font-weight:700;margin-bottom:16px;color:#1e293b;}
-.pay-option{display:block;cursor:pointer;margin-bottom:10px;}
-.pay-option input{display:none;}
-.pay-box{display:flex;align-items:center;gap:14px;padding:12px 16px;border:2px solid #e2e8f0;border-radius:10px;transition:all .15s;}
-.pay-option input:checked + .pay-box{border-color:#e11d48;background:#fff5f7;}
-.pay-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.1rem;background:#f1f5f9;flex-shrink:0;}
-.pay-box strong{display:block;font-size:.88rem;}
-.pay-box small{font-size:.76rem;color:#64748b;}
-.checkout-summary{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:20px;position:sticky;top:80px;}
-.checkout-summary h3{font-size:.95rem;font-weight:700;margin-bottom:16px;}
-.summary-item{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.83rem;}
-.summary-name small{color:#94a3b8;}
-.summary-divider{margin:12px 0;border-top:2px dashed #e2e8f0;}
-.summary-row{display:flex;justify-content:space-between;padding:6px 0;font-size:.88rem;color:#64748b;}
-.summary-total{font-size:1.05rem;font-weight:800;color:#1e293b;border-top:1.5px solid #e2e8f0;margin-top:6px;padding-top:12px;}
-.form-group{margin-bottom:12px;}
-.form-group label{display:block;font-size:.8rem;font-weight:600;margin-bottom:5px;}
-.form-group input,.form-group textarea{width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;}
-.form-group input:focus,.form-group textarea:focus{outline:none;border-color:#e11d48;}
-</style>
+  </form>
+  {% endif %}
+</div></div>
 
 <script>
-const payNums = {
-  bkash:  'bKash: {{ settings.get("bkash_number","01307461999") }}',
-  nagad:  'Nagad: {{ settings.get("nagad_number","01307461999") }}',
-  rocket: 'Rocket: {{ settings.get("rocket_number","01307461999") }}'
-};
-const subtotal = {{ subtotal }};
-let appliedDiscount = 0;
-
-function showPay(method) {
-  const box = document.getElementById('payInstructions');
-  const num = document.getElementById('payNumber');
-  if (payNums[method]) {
-    box.style.display = 'block';
-    num.textContent = '📱 Send to: ' + payNums[method];
-    document.getElementById('trxInput').required = true;
-  } else {
-    box.style.display = 'none';
-    document.getElementById('trxInput').required = false;
-  }
+const subtotal={{ subtotal }}, delivery={{ 0 if subtotal>=2000 else 80 }};
+const payNums={bkash:'bKash: {{ settings.get("bkash_number","01307461999") }}',nagad:'Nagad: {{ settings.get("nagad_number","01307461999") }}',rocket:'Rocket: {{ settings.get("rocket_number","01307461999") }}'};
+function showPay(m){
+  ['cod','bkash','nagad','rocket'].forEach(x=>{const b=document.getElementById('paybox_'+x);if(b){b.style.borderColor='#e2e8f0';b.style.background='#fff';}});
+  const s=document.getElementById('paybox_'+m);
+  if(s){s.style.borderColor='#e11d48';s.style.background='#fff5f7';}
+  const box=document.getElementById('payInstructions');
+  if(payNums[m]){box.style.display='block';document.getElementById('payNumber').textContent='📱 Send to: '+payNums[m];document.getElementById('trxInput').required=true;}
+  else{box.style.display='none';if(document.getElementById('trxInput'))document.getElementById('trxInput').required=false;}
 }
-
-function applyVoucher() {
-  const code = document.getElementById('voucherInput').value.trim();
-  if (!code) return;
-  const msg = document.getElementById('voucherMsg');
-  fetch('/voucher/validate', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-    body: `code=${encodeURIComponent(code)}&subtotal=${subtotal}`
-  }).then(r => r.json()).then(data => {
-    msg.style.display = 'block';
-    if (data.success) {
-      appliedDiscount = data.discount;
-      document.getElementById('voucherIdInput').value = data.voucher_id;
-      document.getElementById('discountAmountInput').value = data.discount;
-      document.getElementById('discountDisplay').textContent = '-৳' + data.discount.toFixed(0);
-      document.getElementById('discountRow').style.display = 'flex';
-      document.getElementById('totalDisplay').textContent = '৳' + (subtotal - data.discount).toFixed(0);
-      msg.style.color = '#16a34a';
-    } else {
-      msg.style.color = '#dc2626';
-    }
-    msg.textContent = data.message;
+function applyVoucher(){
+  const code=document.getElementById('voucherInput').value.trim();
+  const msg=document.getElementById('voucherMsg');
+  if(!code)return;
+  fetch('/voucher/validate',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`code=${encodeURIComponent(code)}&subtotal=${subtotal}`})
+  .then(r=>r.json()).then(d=>{
+    msg.style.display='block';
+    if(d.success){
+      document.getElementById('voucherIdInput').value=d.voucher_id;
+      document.getElementById('discountAmountInput').value=d.discount;
+      document.getElementById('discountDisplay').textContent='-৳'+d.discount.toFixed(0);
+      document.getElementById('discountRow').style.display='flex';
+      document.getElementById('totalDisplay').textContent='৳'+(subtotal+delivery-d.discount).toFixed(0);
+      msg.style.cssText='display:block;background:#dcfce7;color:#166534;padding:8px 12px;border-radius:6px;font-size:.82rem;';
+    }else{msg.style.cssText='display:block;background:#fee2e2;color:#991b1b;padding:8px 12px;border-radius:6px;font-size:.82rem;';}
+    msg.textContent=d.message;
   });
 }
 </script>

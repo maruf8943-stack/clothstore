@@ -6,105 +6,274 @@
 
     <!-- Breadcrumb -->
     <div style="font-size:.82rem;color:var(--muted);margin-bottom:28px;">
-      <a href="{{ url_for('index') }}">Home</a> /
-      <a href="{{ url_for('products') }}">Products</a> /
-      <a href="{{ url_for('products', category=product.category) }}">{{ product.category }}</a> /
-      {{ product.name }}
+      <a href="{{ url_for('index') }}" style="color:var(--muted);text-decoration:none;">Home</a> /
+      <a href="{{ url_for('products') }}" style="color:var(--muted);text-decoration:none;">Products</a> /
+      <a href="{{ url_for('products', category=product.category) }}" style="color:var(--muted);text-decoration:none;text-transform:capitalize;">{{ product.category }}</a> /
+      <span>{{ product.name }}</span>
     </div>
 
     <div class="product-detail">
-      <!-- Gallery -->
+      <!-- Image -->
       <div class="product-gallery">
         <div class="gallery-main">
-          <img id="gallery-main-img" src="{{ product.image }}" alt="{{ product.name }}">
+          <img id="gallery-main-img" src="{{ product.image }}" alt="{{ product.name }}"
+               style="width:100%;height:100%;object-fit:cover;border-radius:12px;">
         </div>
       </div>
 
       <!-- Info -->
       <div class="product-info">
-        <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
           {% if product.is_new %}<span class="badge badge-new">New Arrival</span>{% endif %}
           {% if product.original_price %}<span class="badge badge-sale">On Sale</span>{% endif %}
-          <span class="badge" style="background:var(--primary);text-transform:capitalize;">{{ product.gender }}</span>
-          <span class="badge" style="background:var(--primary);text-transform:capitalize;">{{ product.category }}</span>
+          <span class="badge" style="background:var(--primary);color:#fff;text-transform:capitalize;">{{ product.gender }}</span>
+          <span class="badge" style="background:var(--primary);color:#fff;text-transform:capitalize;">{{ product.category }}</span>
         </div>
 
-        <h1>{{ product.name }}</h1>
+        <h1 style="font-size:1.6rem;font-weight:800;margin-bottom:12px;">{{ product.name }}</h1>
 
-        <div class="product-price-box">
-          <span class="price-big">৳{{ "%.0f"|format(product.price) }}</span>
+        <!-- Star rating display -->
+        {% if reviews %}
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+          <div style="display:flex;gap:2px;">
+            {% for i in range(1,6) %}
+            <span style="color:{% if i <= avg_rating|round %}#f59e0b{% else %}#d1d5db{% endif %};font-size:1.2rem;">★</span>
+            {% endfor %}
+          </div>
+          <span style="font-weight:700;color:#1e293b;">{{ avg_rating }}</span>
+          <span style="color:#94a3b8;font-size:.83rem;">({{ reviews|length }} review{% if reviews|length != 1 %}s{% endif %})</span>
+        </div>
+        {% else %}
+        <div style="margin-bottom:16px;font-size:.83rem;color:#94a3b8;">No reviews yet — be the first!</div>
+        {% endif %}
+
+        <div class="product-price-box" style="margin-bottom:16px;">
+          <span class="price-big" style="font-size:2rem;font-weight:800;color:#e11d48;">৳{{ "%.0f"|format(product.price) }}</span>
           {% if product.original_price %}
-          <span class="price-old-big">৳{{ "%.0f"|format(product.original_price) }}</span>
-          <span class="discount-tag">
-            {{ ((1 - product.price / product.original_price) * 100)|int }}% OFF
-          </span>
+          <span class="price-old-big" style="font-size:1.1rem;color:#94a3b8;text-decoration:line-through;margin-left:8px;">৳{{ "%.0f"|format(product.original_price) }}</span>
+          <span class="discount-tag" style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:700;margin-left:8px;">{{ ((1 - product.price / product.original_price) * 100)|int }}% OFF</span>
           {% endif %}
         </div>
 
-        <p class="product-desc">{{ product.description }}</p>
+        <p style="color:#64748b;line-height:1.7;margin-bottom:20px;">{{ product.description }}</p>
 
+        {% if not session.is_admin %}
         <form action="{{ url_for('add_to_cart') }}" method="post">
           <input type="hidden" name="product_id" value="{{ product.id }}">
           <input type="hidden" id="selected-size" name="size" value="">
 
-          <!-- Size Selector -->
-          <div class="size-selector">
-            <label>Select Size</label>
-            <div class="size-options">
+          <div class="size-selector" style="margin-bottom:16px;">
+            <label style="font-size:.82rem;font-weight:700;display:block;margin-bottom:8px;">Select Size</label>
+            <div class="size-options" style="display:flex;gap:8px;flex-wrap:wrap;">
               {% for size in product.sizes.split(',') %}
-              <button type="button" class="size-btn" data-size="{{ size.strip() }}">{{ size.strip() }}</button>
+              <button type="button" class="size-btn" data-size="{{ size.strip() }}"
+                      style="padding:8px 16px;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;font-weight:600;font-size:.85rem;background:#fff;transition:all .15s;">
+                {{ size.strip() }}
+              </button>
               {% endfor %}
             </div>
+            <p id="size-error" style="color:#e11d48;font-size:.78rem;margin-top:6px;display:none;">Please select a size</p>
           </div>
 
-          <!-- Quantity -->
-          <div class="qty-row">
-            <label style="font-size:.85rem;font-weight:600;">Quantity</label>
-            <div class="qty-control">
-              <button type="button" id="qty-minus">−</button>
-              <input type="number" id="qty-input" name="quantity" value="1" min="1" max="{{ product.stock }}">
-              <button type="button" id="qty-plus">+</button>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+            <label style="font-size:.82rem;font-weight:700;">Quantity</label>
+            <div style="display:flex;align-items:center;border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+              <button type="button" id="qty-minus"
+                      style="width:36px;height:36px;border:none;background:#f8fafc;cursor:pointer;font-size:1.1rem;font-weight:700;">−</button>
+              <input type="number" id="qty-input" name="quantity" value="1" min="1" max="{{ product.stock }}"
+                     style="width:48px;text-align:center;border:none;outline:none;font-weight:700;font-size:.9rem;">
+              <button type="button" id="qty-plus"
+                      style="width:36px;height:36px;border:none;background:#f8fafc;cursor:pointer;font-size:1.1rem;font-weight:700;">+</button>
             </div>
-            <span style="font-size:.8rem;color:var(--muted);">{{ product.stock }} in stock</span>
+            <span style="font-size:.8rem;color:#94a3b8;">{{ product.stock }} in stock</span>
           </div>
 
           {% if session.user_id %}
             {% if product.stock > 0 %}
-            <button type="submit" class="btn btn-accent btn-block" style="margin-bottom:12px;">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-              Add to Cart
+            <button type="submit" onclick="return checkSize()"
+                    style="width:100%;padding:13px;background:#e11d48;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;margin-bottom:10px;transition:background .15s;"
+                    onmouseover="this.style.background='#be123c'" onmouseout="this.style.background='#e11d48'">
+              🛒 Add to Cart
             </button>
             {% else %}
-            <button class="btn btn-block" disabled style="background:#e5e7eb;color:var(--muted);cursor:not-allowed;margin-bottom:12px;">Out of Stock</button>
+            <button disabled style="width:100%;padding:13px;background:#e5e7eb;color:#9ca3af;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:not-allowed;margin-bottom:10px;">
+              Out of Stock
+            </button>
             {% endif %}
           {% else %}
-          <a href="{{ url_for('login') }}" class="btn btn-accent btn-block" style="margin-bottom:12px;">Login to Add to Cart</a>
+          <a href="{{ url_for('login') }}"
+             style="display:block;width:100%;padding:13px;background:#e11d48;color:#fff;border-radius:10px;font-size:1rem;font-weight:700;text-align:center;text-decoration:none;margin-bottom:10px;">
+            Login to Add to Cart
+          </a>
           {% endif %}
         </form>
+        {% else %}
+        <div style="background:#fef3c7;border-radius:10px;padding:12px 16px;font-size:.83rem;color:#92400e;margin-bottom:16px;">
+          ⚠️ Admin view — <a href="{{ url_for('admin_edit_product', pid=product.id) }}" style="color:#e11d48;font-weight:700;">Edit this product →</a>
+        </div>
+        {% endif %}
 
-        <!-- Details -->
-        <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:8px;">
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <div style="display:flex;gap:12px;font-size:.85rem;">
-              <span style="color:var(--muted);width:100px;">Category</span>
-              <span style="font-weight:500;text-transform:capitalize;">{{ product.category }}</span>
+        <!-- Product details -->
+        <div style="border-top:1px solid #e2e8f0;padding-top:16px;margin-top:8px;">
+          {% for label, val in [('Category', product.category), ('Gender', product.gender), ('Available Sizes', product.sizes), ('Stock', product.stock|string + ' units')] %}
+          <div style="display:flex;gap:12px;font-size:.85rem;padding:6px 0;border-bottom:1px solid #f8fafc;">
+            <span style="color:#94a3b8;width:120px;flex-shrink:0;">{{ label }}</span>
+            <span style="font-weight:500;text-transform:capitalize;">{{ val }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ REVIEWS SECTION ══════════════════════════════════════ -->
+    <div style="margin-top:60px;padding-top:32px;border-top:2px solid #f1f5f9;">
+      <h2 style="font-size:1.2rem;font-weight:800;margin-bottom:4px;">⭐ Customer Reviews</h2>
+      <p style="font-size:.83rem;color:#94a3b8;margin-bottom:24px;">
+        {% if reviews %}{{ reviews|length }} review{% if reviews|length!=1 %}s{% endif %} · {{ avg_rating }}/5 average{% else %}No reviews yet{% endif %}
+      </p>
+
+      <div style="display:grid;grid-template-columns:1fr {% if session.user_id and not session.is_admin %}380px{% endif %};gap:28px;align-items:start;">
+
+        <!-- Review list -->
+        <div>
+          <!-- Rating summary bars -->
+          {% if reviews %}
+          <div style="background:#f8fafc;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:24px;">
+            <div style="text-align:center;">
+              <div style="font-size:2.8rem;font-weight:900;color:#1e293b;line-height:1;">{{ avg_rating }}</div>
+              <div style="display:flex;gap:2px;justify-content:center;margin:4px 0;">
+                {% for i in range(1,6) %}<span style="color:{% if i<=avg_rating|round %}#f59e0b{% else %}#d1d5db{% endif %};font-size:.9rem;">★</span>{% endfor %}
+              </div>
+              <div style="font-size:.72rem;color:#94a3b8;">{{ reviews|length }} reviews</div>
             </div>
-            <div style="display:flex;gap:12px;font-size:.85rem;">
-              <span style="color:var(--muted);width:100px;">Gender</span>
-              <span style="font-weight:500;text-transform:capitalize;">{{ product.gender }}</span>
-            </div>
-            <div style="display:flex;gap:12px;font-size:.85rem;">
-              <span style="color:var(--muted);width:100px;">Sizes</span>
-              <span style="font-weight:500;">{{ product.sizes }}</span>
-            </div>
-            <div style="display:flex;gap:12px;font-size:.85rem;">
-              <span style="color:var(--muted);width:100px;">Stock</span>
-              <span style="font-weight:500;color:{% if product.stock > 0 %}#10b981{% else %}var(--accent){% endif %};">
-                {% if product.stock > 0 %}In Stock ({{ product.stock }} left){% else %}Out of Stock{% endif %}
-              </span>
+            <div style="flex:1;">
+              {% for star in [5,4,3,2,1] %}
+              {% set cnt = reviews|selectattr('rating','equalto',star)|list|length %}
+              {% set pct = (cnt/reviews|length*100)|int if reviews|length > 0 else 0 %}
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+                <span style="font-size:.75rem;color:#64748b;width:8px;">{{ star }}</span>
+                <span style="color:#f59e0b;font-size:.75rem;">★</span>
+                <div style="flex:1;height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;">
+                  <div style="width:{{ pct }}%;height:100%;background:#f59e0b;border-radius:4px;"></div>
+                </div>
+                <span style="font-size:.72rem;color:#94a3b8;width:16px;">{{ cnt }}</span>
+              </div>
+              {% endfor %}
             </div>
           </div>
+          {% endif %}
+
+          <!-- Individual reviews -->
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            {% for r in reviews %}
+            <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:18px 20px;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="width:38px;height:38px;border-radius:50%;background:#e11d48;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;">
+                    {{ r.reviewer_name[0]|upper }}
+                  </div>
+                  <div>
+                    <div style="font-weight:700;font-size:.88rem;">{{ r.reviewer_name }}</div>
+                    <div style="font-size:.72rem;color:#94a3b8;">{{ r.created_at.strftime('%d %b %Y') if r.created_at else '' }}</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:1px;">
+                  {% for i in range(1,6) %}
+                  <span style="color:{% if i<=r.rating %}#f59e0b{% else %}#d1d5db{% endif %};font-size:1.1rem;">★</span>
+                  {% endfor %}
+                </div>
+              </div>
+              {% if r.title %}<p style="font-weight:700;font-size:.88rem;margin-bottom:4px;color:#1e293b;">{{ r.title }}</p>{% endif %}
+              {% if r.body %}<p style="font-size:.85rem;color:#475569;line-height:1.6;margin:0 0 10px;">{{ r.body }}</p>{% endif %}
+              {% set media = [r.media_1, r.media_2, r.media_3]|select|list %}
+              {% if media %}
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                {% for m in media %}
+                {% if m %}
+                {% if m.endswith('.mp4') or m.endswith('.mov') or m.endswith('.avi') or m.endswith('.webm') %}
+                <video src="{{ m }}" controls style="width:90px;height:90px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;"></video>
+                {% else %}
+                <a href="{{ m }}" target="_blank">
+                  <img src="{{ m }}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;cursor:pointer;">
+                </a>
+                {% endif %}
+                {% endif %}
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+            {% else %}
+            <div style="text-align:center;padding:40px;background:#f8fafc;border-radius:14px;color:#94a3b8;">
+              <div style="font-size:2.5rem;margin-bottom:8px;">💬</div>
+              <p style="font-weight:600;">No reviews yet — be the first to review!</p>
+            </div>
+            {% endfor %}
+          </div>
         </div>
+
+        <!-- Write / Edit Review -->
+        {% if session.user_id and not session.is_admin %}
+        <div style="position:sticky;top:80px;">
+          {% if can_review %}
+          <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:22px;">
+            <h3 style="font-size:.95rem;font-weight:800;margin-bottom:18px;">
+              {% if user_review %}✏️ Edit Your Review{% else %}✍️ Write a Review{% endif %}
+            </h3>
+            <form method="post" action="{{ url_for('submit_review', pid=product.id) }}">
+
+              <!-- Star Picker -->
+              <div style="margin-bottom:16px;">
+                <label style="font-size:.8rem;font-weight:700;display:block;margin-bottom:10px;color:#475569;">YOUR RATING *</label>
+                <div style="display:flex;gap:6px;" id="starRow">
+                  {% for i in range(1,6) %}
+                  <span data-val="{{ i }}"
+                        style="font-size:2.2rem;cursor:pointer;color:{% if user_review and i<=user_review.rating %}#f59e0b{% else %}#d1d5db{% endif %};
+                               transition:color .1s;line-height:1;user-select:none;"
+                        onclick="setStar({{ i }})"
+                        onmouseover="hoverStar({{ i }})"
+                        onmouseout="unhoverStar()">★</span>
+                  {% endfor %}
+                </div>
+                <input type="hidden" name="rating" id="ratingInput" value="{{ user_review.rating if user_review else '' }}" required>
+                <p id="starError" style="color:#e11d48;font-size:.75rem;margin-top:4px;display:none;">Please click a star to rate</p>
+              </div>
+
+              <div style="margin-bottom:12px;">
+                <label style="font-size:.8rem;font-weight:700;display:block;margin-bottom:6px;color:#475569;">TITLE</label>
+                <input type="text" name="title" placeholder="e.g. Great quality!"
+                       value="{{ user_review.title if user_review else '' }}"
+                       style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.85rem;outline:none;"
+                       onfocus="this.style.borderColor='#e11d48'" onblur="this.style.borderColor='#e2e8f0'">
+              </div>
+
+              <div style="margin-bottom:16px;">
+                <label style="font-size:.8rem;font-weight:700;display:block;margin-bottom:6px;color:#475569;">YOUR REVIEW</label>
+                <textarea name="body" rows="4" placeholder="Tell others what you think..."
+                          style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.85rem;resize:none;outline:none;"
+                          onfocus="this.style.borderColor='#e11d48'" onblur="this.style.borderColor='#e2e8f0'">{{ user_review.body if user_review else '' }}</textarea>
+              </div>
+
+              <button type="submit" onclick="return validateReview()"
+                      style="width:100%;background:#e11d48;color:#fff;border:none;padding:12px;border-radius:8px;font-weight:700;font-size:.9rem;cursor:pointer;transition:background .15s;"
+                      onmouseover="this.style.background='#be123c'" onmouseout="this.style.background='#e11d48'">
+                {% if user_review %}Update Review{% else %}Submit Review{% endif %}
+              </button>
+            </form>
+          </div>
+          {% elif session.user_id %}
+          <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:22px;text-align:center;">
+            <div style="font-size:2rem;margin-bottom:10px;">🛍️</div>
+            <p style="font-weight:700;font-size:.9rem;margin-bottom:6px;">Purchase to Review</p>
+            <p style="font-size:.8rem;color:#94a3b8;margin-bottom:16px;">You can write a review once your order is marked as <strong>Delivered</strong>.</p>
+            <a href="{{ url_for('products') }}"
+               style="display:inline-block;background:#e11d48;color:#fff;padding:9px 20px;border-radius:8px;text-decoration:none;font-size:.83rem;font-weight:700;">
+              Shop Now →
+            </a>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
       </div>
     </div>
 
@@ -114,15 +283,13 @@
       <div class="section-header">
         <div>
           <div class="section-title">Related Products</div>
-          <p class="section-sub">You might also like these</p>
+          <p class="section-sub">You might also like</p>
         </div>
       </div>
       <div class="product-grid">
         {% for p in related %}
         <a href="{{ url_for('product_detail', pid=p.id) }}" class="product-card">
-          <div class="product-card-img">
-            <img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy">
-          </div>
+          <div class="product-card-img"><img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy"></div>
           <div class="product-card-body">
             <div class="product-name">{{ p.name }}</div>
             <div class="product-meta">{{ p.gender }} &bull; {{ p.category }}</div>
@@ -139,4 +306,78 @@
 
   </div>
 </section>
+
+<script>
+// ── Size selector ──────────────────────────────
+document.querySelectorAll('.size-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.size-btn').forEach(b => {
+      b.style.borderColor = '#e2e8f0';
+      b.style.background  = '#fff';
+      b.style.color       = '#1e293b';
+    });
+    btn.style.borderColor = '#e11d48';
+    btn.style.background  = '#e11d48';
+    btn.style.color       = '#fff';
+    document.getElementById('selected-size').value = btn.dataset.size;
+    document.getElementById('size-error').style.display = 'none';
+  });
+});
+
+function checkSize() {
+  const size = document.getElementById('selected-size').value;
+  if (!size) {
+    document.getElementById('size-error').style.display = 'block';
+    return false;
+  }
+  return true;
+}
+
+// ── Quantity ────────────────────────────────────
+const qtyInput = document.getElementById('qty-input');
+if (qtyInput) {
+  document.getElementById('qty-minus').onclick = () => {
+    qtyInput.value = Math.max(1, parseInt(qtyInput.value) - 1);
+  };
+  document.getElementById('qty-plus').onclick = () => {
+    qtyInput.value = Math.min({{ product.stock }}, parseInt(qtyInput.value) + 1);
+  };
+}
+
+// ── Star rating picker ──────────────────────────
+let currentRating = {{ user_review.rating if user_review else 0 }};
+
+function renderStars(n) {
+  document.querySelectorAll('#starRow span').forEach((s, i) => {
+    s.style.color = i < n ? '#f59e0b' : '#d1d5db';
+  });
+}
+
+function setStar(n) {
+  currentRating = n;
+  document.getElementById('ratingInput').value = n;
+  document.getElementById('starError').style.display = 'none';
+  renderStars(n);
+}
+
+function hoverStar(n) {
+  renderStars(n);
+}
+
+function unhoverStar() {
+  renderStars(currentRating);
+}
+
+function validateReview() {
+  const rating = document.getElementById('ratingInput').value;
+  if (!rating) {
+    document.getElementById('starError').style.display = 'block';
+    return false;
+  }
+  return true;
+}
+
+// Init stars on load
+renderStars(currentRating);
+</script>
 {% endblock %}
