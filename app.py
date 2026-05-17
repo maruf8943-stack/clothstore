@@ -666,12 +666,15 @@ def checkout():
             else:
                 oid = c.lastrowid
 
-            # Save trx_id if column exists (safe update)
+            # Save trx_id if column exists
             if trx_id:
                 try:
+                    if USE_POSTGRES:
+                        c.execute("SAVEPOINT sp1")
                     c.execute("UPDATE orders SET trx_id=%s WHERE id=%s", (trx_id, oid))
                 except Exception:
-                    pass  # column may not exist yet on older DB
+                    if USE_POSTGRES:
+                        c.execute("ROLLBACK TO SAVEPOINT sp1")
 
             for item in items:
                 c.execute("INSERT INTO order_items (order_id,product_id,quantity,size,price) VALUES (%s,%s,%s,%s,%s)",
@@ -1103,16 +1106,24 @@ def admin_order_detail(oid):
             if action == 'update_discount':
                 disc = request.form.get('discount_amount', 0.0, type=float)
                 note = request.form.get('admin_note', '').strip()
-                orig = sum(i['price'] * i['quantity'] for i in items)
-                with db.cursor() as c:
-                    c.execute("UPDATE orders SET discount_amount=%s,admin_note=%s,total=%s WHERE id=%s",
-                              (disc, note, max(orig - disc, 0), oid))
-                db.commit(); flash('Discount applied!', 'success')
+                orig = sum(float(i['price']) * int(i['quantity']) for i in items)
+                try:
+                    with db.cursor() as c:
+                        c.execute("UPDATE orders SET discount_amount=%s,admin_note=%s,total=%s WHERE id=%s",
+                                  (disc, note, max(orig - disc, 0), oid))
+                    db.commit(); flash('Discount applied!', 'success')
+                except Exception as e:
+                    db.rollback()
+                    flash(f'Column missing — run migrate.sql first. ({e})', 'error')
             elif action == 'update_tracking':
                 tn = request.form.get('tracking_note', '').strip()
-                with db.cursor() as c:
-                    c.execute("UPDATE orders SET tracking_note=%s WHERE id=%s", (tn, oid))
-                db.commit(); flash('Tracking updated!', 'success')
+                try:
+                    with db.cursor() as c:
+                        c.execute("UPDATE orders SET tracking_note=%s WHERE id=%s", (tn, oid))
+                    db.commit(); flash('Tracking updated!', 'success')
+                except Exception as e:
+                    db.rollback()
+                    flash(f'Column missing — run migrate.sql first. ({e})', 'error')
             return redirect(url_for('admin_order_detail', oid=oid))
     finally:
         db.close()
