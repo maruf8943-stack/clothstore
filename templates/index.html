@@ -56,31 +56,65 @@
   </div>
 </div>
 
-<!-- CATEGORY CARDS — fully DB driven -->
+<!-- CATEGORY CARDS — hardcoded (reliable) -->
 <section class="section" style="background:var(--light-bg)">
   <div class="container">
     <div class="section-header">
       <div>
-        <div class="section-title">{{ site.get('section_cat_title', 'Shop by Category') }}</div>
-        <p class="section-sub">{{ site.get('section_cat_sub', 'Find what fits your style') }}</p>
+        <div class="section-title">Shop by Category</div>
+        <p class="section-sub">Find what fits your style</p>
       </div>
     </div>
     <div class="cat-grid">
-      {% for i in range(1, 7) %}
-      {% set label = site.get('cat_'~i~'_label', '') %}
-      {% set sub   = site.get('cat_'~i~'_sub', '') %}
-      {% set url   = site.get('cat_'~i~'_url', '/products') %}
-      {% set img   = site.get('cat_'~i~'_img', '') %}
-      {% if label %}
-      <a href="{{ url }}" class="cat-card">
-        <img src="{{ img }}" alt="{{ label }}" loading="lazy">
+
+      <a href="{{ url_for('products', category='t-shirt', gender='men') }}" class="cat-card">
+        <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600" alt="Men's T-Shirts" loading="lazy">
         <div class="cat-card-overlay">
-          <div class="cat-card-label">{{ label }}</div>
-          <div class="cat-card-sub">{{ sub }}</div>
+          <div class="cat-card-label">Men's T-Shirts</div>
+          <div class="cat-card-sub">Casual &amp; Graphic</div>
         </div>
       </a>
-      {% endif %}
-      {% endfor %}
+
+      <a href="{{ url_for('products', category='shirt', gender='men') }}" class="cat-card">
+        <img src="https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600" alt="Men's Shirts" loading="lazy">
+        <div class="cat-card-overlay">
+          <div class="cat-card-label">Men's Shirts</div>
+          <div class="cat-card-sub">Formal &amp; Casual</div>
+        </div>
+      </a>
+
+      <a href="{{ url_for('products', category='pant', gender='men') }}" class="cat-card">
+        <img src="https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=600" alt="Men's Pants" loading="lazy">
+        <div class="cat-card-overlay">
+          <div class="cat-card-label">Men's Pants</div>
+          <div class="cat-card-sub">Chinos, Cargo &amp; More</div>
+        </div>
+      </a>
+
+      <a href="{{ url_for('products', category='t-shirt', gender='kid') }}" class="cat-card">
+        <img src="https://images.unsplash.com/photo-1519278409-1f56fdda7fe5?w=600" alt="Kids T-Shirts" loading="lazy">
+        <div class="cat-card-overlay">
+          <div class="cat-card-label">Kids' T-Shirts</div>
+          <div class="cat-card-sub">Fun &amp; Colourful</div>
+        </div>
+      </a>
+
+      <a href="{{ url_for('products', category='shirt', gender='kid') }}" class="cat-card">
+        <img src="https://images.unsplash.com/photo-1595590424283-b8f17842773f?w=600" alt="Kids Shirts" loading="lazy">
+        <div class="cat-card-overlay">
+          <div class="cat-card-label">Kids' Shirts</div>
+          <div class="cat-card-sub">Smart &amp; Festive</div>
+        </div>
+      </a>
+
+      <a href="{{ url_for('products', category='pant', gender='kid') }}" class="cat-card">
+        <img src="https://images.unsplash.com/photo-1518717758536-85ae29035b6d?w=600" alt="Kids Pants" loading="lazy">
+        <div class="cat-card-overlay">
+          <div class="cat-card-label">Kids' Pants</div>
+          <div class="cat-card-sub">Joggers &amp; Chinos</div>
+        </div>
+      </a>
+
     </div>
   </div>
 </section>
@@ -98,24 +132,34 @@
     </div>
     <div class="product-grid">
       {% for p in featured %}
-      <a href="{{ url_for('product_detail', pid=p.id) }}" class="product-card">
-        <div class="product-card-img"><img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy"></div>
-        <div class="product-card-badges">
-          {% if p.is_new %}<span class="badge badge-new">New</span>{% endif %}
-          {% if p.original_price %}<span class="badge badge-sale">Sale</span>{% endif %}
-        </div>
-        <div class="product-card-body">
-          <div class="product-name">{{ p.name }}</div>
-          <div class="product-meta">{{ p.gender|capitalize }} &bull; {{ p.category|capitalize }}</div>
-          <div class="product-price">
-            <span class="price-now">৳{{ "%.0f"|format(p.price) }}</span>
-            {% if p.original_price %}<span class="price-old">৳{{ "%.0f"|format(p.original_price) }}</span>{% endif %}
+      <div class="product-card" style="cursor:default;">
+        <a href="{{ url_for('product_detail', pid=p.id) }}" style="text-decoration:none;color:inherit;">
+          <div class="product-card-img"><img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy"></div>
+          <div class="product-card-badges">
+            {% if p.is_new %}<span class="badge badge-new">New</span>{% endif %}
+            {% if p.original_price %}<span class="badge badge-sale">Sale</span>{% endif %}
           </div>
-          <div class="product-card-actions">
-            <span class="btn btn-primary btn-sm" style="flex:1;justify-content:center;">View Details</span>
+          <div class="product-card-body">
+            <div class="product-name">{{ p.name }}</div>
+            <div class="product-meta">{{ p.gender|capitalize }} &bull; {{ p.category|capitalize }}</div>
+            <div class="product-price">
+              <span class="price-now">৳{{ "%.0f"|format(p.price) }}</span>
+              {% if p.original_price %}<span class="price-old">৳{{ "%.0f"|format(p.original_price) }}</span>{% endif %}
+            </div>
           </div>
+        </a>
+        <div class="product-card-actions" style="padding:0 14px 14px;display:flex;gap:8px;">
+          {% if session.user_id and not session.is_admin %}
+          <form method="post" action="{{ url_for('add_to_cart') }}" style="flex:1;">
+            <input type="hidden" name="product_id" value="{{ p.id }}">
+            <input type="hidden" name="quantity" value="1">
+            <input type="hidden" name="size" value="{{ p.sizes.split(',')[0] if p.sizes else 'M' }}">
+            <button type="submit" class="btn btn-accent btn-sm" style="width:100%;">🛒 Add to Cart</button>
+          </form>
+          {% endif %}
+          <a href="{{ url_for('product_detail', pid=p.id) }}" class="btn btn-outline btn-sm" style="flex:1;text-align:center;">Details</a>
         </div>
-      </a>
+      </div>
       {% endfor %}
     </div>
   </div>
@@ -156,24 +200,34 @@
     </div>
     <div class="product-grid">
       {% for p in new_arrivals %}
-      <a href="{{ url_for('product_detail', pid=p.id) }}" class="product-card">
-        <div class="product-card-img"><img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy"></div>
-        <div class="product-card-badges">
-          <span class="badge badge-new">New</span>
-          {% if p.original_price %}<span class="badge badge-sale">Sale</span>{% endif %}
-        </div>
-        <div class="product-card-body">
-          <div class="product-name">{{ p.name }}</div>
-          <div class="product-meta">{{ p.gender|capitalize }} &bull; {{ p.category|capitalize }}</div>
-          <div class="product-price">
-            <span class="price-now">৳{{ "%.0f"|format(p.price) }}</span>
-            {% if p.original_price %}<span class="price-old">৳{{ "%.0f"|format(p.original_price) }}</span>{% endif %}
+      <div class="product-card" style="cursor:default;">
+        <a href="{{ url_for('product_detail', pid=p.id) }}" style="text-decoration:none;color:inherit;">
+          <div class="product-card-img"><img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy"></div>
+          <div class="product-card-badges">
+            <span class="badge badge-new">New</span>
+            {% if p.original_price %}<span class="badge badge-sale">Sale</span>{% endif %}
           </div>
-          <div class="product-card-actions">
-            <span class="btn btn-primary btn-sm" style="flex:1;justify-content:center;">View Details</span>
+          <div class="product-card-body">
+            <div class="product-name">{{ p.name }}</div>
+            <div class="product-meta">{{ p.gender|capitalize }} &bull; {{ p.category|capitalize }}</div>
+            <div class="product-price">
+              <span class="price-now">৳{{ "%.0f"|format(p.price) }}</span>
+              {% if p.original_price %}<span class="price-old">৳{{ "%.0f"|format(p.original_price) }}</span>{% endif %}
+            </div>
           </div>
+        </a>
+        <div class="product-card-actions" style="padding:0 14px 14px;display:flex;gap:8px;">
+          {% if session.user_id and not session.is_admin %}
+          <form method="post" action="{{ url_for('add_to_cart') }}" style="flex:1;">
+            <input type="hidden" name="product_id" value="{{ p.id }}">
+            <input type="hidden" name="quantity" value="1">
+            <input type="hidden" name="size" value="{{ p.sizes.split(',')[0] if p.sizes else 'M' }}">
+            <button type="submit" class="btn btn-accent btn-sm" style="width:100%;">🛒 Add to Cart</button>
+          </form>
+          {% endif %}
+          <a href="{{ url_for('product_detail', pid=p.id) }}" class="btn btn-outline btn-sm" style="flex:1;text-align:center;">Details</a>
         </div>
-      </a>
+      </div>
       {% endfor %}
     </div>
   </div>
