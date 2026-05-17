@@ -656,15 +656,22 @@ def checkout():
 
         with db.cursor() as c:
             c.execute("""INSERT INTO orders
-                (user_id, name, phone, address, total, discount_amount, payment_method, trx_id)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
+                (user_id, name, phone, address, total, discount_amount, payment_method)
+                VALUES (%s,%s,%s,%s,%s,%s,%s)""",
                 (session['user_id'], name, phone, full_address,
-                 final_total, discount_amount, payment_method, trx_id or None))
+                 final_total, discount_amount, payment_method))
             if USE_POSTGRES:
                 c.execute("SELECT lastval()")
                 oid = c.fetchone()['lastval']
             else:
                 oid = c.lastrowid
+
+            # Save trx_id if column exists (safe update)
+            if trx_id:
+                try:
+                    c.execute("UPDATE orders SET trx_id=%s WHERE id=%s", (trx_id, oid))
+                except Exception:
+                    pass  # column may not exist yet on older DB
 
             for item in items:
                 c.execute("INSERT INTO order_items (order_id,product_id,quantity,size,price) VALUES (%s,%s,%s,%s,%s)",
