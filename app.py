@@ -4,6 +4,7 @@ import hashlib, os, time, secrets, random, re, html
 from werkzeug.utils import secure_filename
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_mail import Mail, Message
 from dotenv import load_dotenv
 import bleach
 
@@ -20,6 +21,15 @@ else:
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'clothstore_secret_key_v3_2026')
+
+# ─── EMAIL (Gmail SMTP) ───────────────────────
+app.config['MAIL_SERVER']         = 'smtp.gmail.com'
+app.config['MAIL_PORT']           = 587
+app.config['MAIL_USE_TLS']        = True
+app.config['MAIL_USERNAME']       = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD']       = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
+mail = Mail(app)
 
 # ─────────────────────────────────────────────
 # SECURITY SETUP
@@ -343,7 +353,7 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
-# ─── FORGOT PASSWORD (OTP) ────────────────────────────────
+# ─── FORGOT PASSWORD (OTP to Gmail) ───────────────────────
 @app.route('/forgot-password', methods=['GET', 'POST'])
 @limiter.limit("5 per hour")
 def forgot_password():
@@ -363,7 +373,46 @@ def forgot_password():
                               (otp, expiry, user['id']))
                 db.commit()
                 session['otp_user_id'] = user['id']
-                flash(f'[Dev mode] Your OTP is: {otp}', 'success')
+                # Send OTP to Gmail
+                try:
+                    msg = Message(
+                        subject='ClothStore — Your Password Reset OTP',
+                        recipients=[user['email']]
+                    )
+                    msg.html = f"""
+                    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;
+                                padding:32px;border:1px solid #e2e8f0;border-radius:12px;">
+                      <h2 style="margin:0 0 4px;">
+                        <span style="color:#e11d48;">CLOTH</span><span style="color:#1e293b;">STORE</span>
+                      </h2>
+                      <p style="color:#64748b;font-size:13px;margin:0 0 24px;">Password Reset Request</p>
+                      <p style="font-size:15px;color:#1e293b;">Hi <strong>{user['name']}</strong>,</p>
+                      <p style="font-size:14px;color:#475569;">
+                        Use the OTP below to reset your password.<br>
+                        It expires in <strong>15 minutes</strong>.
+                      </p>
+                      <div style="background:#f8fafc;border:2px dashed #e11d48;border-radius:12px;
+                                  padding:24px;text-align:center;margin:24px 0;">
+                        <div style="font-size:42px;font-weight:900;letter-spacing:12px;
+                                    color:#e11d48;font-family:monospace;">{otp}</div>
+                        <div style="font-size:12px;color:#94a3b8;margin-top:6px;">
+                          One-Time Password — valid 15 minutes
+                        </div>
+                      </div>
+                      <p style="font-size:13px;color:#94a3b8;">
+                        If you did not request this, ignore this email.
+                      </p>
+                      <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0;">
+                      <p style="font-size:11px;color:#cbd5e1;text-align:center;margin:0;">
+                        © 2026 ClothStore. All rights reserved.
+                      </p>
+                    </div>
+                    """
+                    mail.send(msg)
+                    flash(f'OTP sent to {user["email"]}. Check your inbox (and spam folder).', 'success')
+                except Exception as e:
+                    flash(f'Could not send email. Please check your email address.', 'error')
+                    return redirect(url_for('forgot_password'))
                 return redirect(url_for('verify_otp'))
             else:
                 flash('No account found with that email or phone.', 'error')
@@ -548,7 +597,7 @@ def checkout_selected():
         return redirect(url_for('cart'))
     subtotal = sum(i['price'] * i['quantity'] for i in items)
     return render_template('checkout.html', items=items, subtotal=subtotal,
-                           settings=get_all_settings(), cart_count=get_cart_count(),
+                           cart_count=get_cart_count(),
                            user_name=user['name'], user_phone=user.get('phone', '') or '')
 
 # ─── CHECKOUT POST ────────────────────────────────────────
@@ -603,12 +652,14 @@ def checkout():
         delivery    = 0 if subtotal >= 2000 else 80
         final_total = max(subtotal + delivery - discount_amount, 0)
 
+        trx_id = sanitize(request.form.get('trx_id', ''), 100)
+
         with db.cursor() as c:
             c.execute("""INSERT INTO orders
-                (user_id, name, phone, address, total, discount_amount, payment_method)
-                VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+                (user_id, name, phone, address, total, discount_amount, payment_method, trx_id)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (session['user_id'], name, phone, full_address,
-                 final_total, discount_amount, payment_method))
+                 final_total, discount_amount, payment_method, trx_id or None))
             if USE_POSTGRES:
                 c.execute("SELECT lastval()")
                 oid = c.fetchone()['lastval']
